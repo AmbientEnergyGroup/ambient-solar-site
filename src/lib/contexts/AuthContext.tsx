@@ -39,6 +39,7 @@ interface AuthContextType {
   user: ExtendedUser | null;
   userData: UserData | null;
   loading: boolean;
+  isAdmin: boolean;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   signUpWithEmail: (email: string, password: string, role?: 'admin' | 'setter' | 'closer' | 'manager') => Promise<void>;
@@ -220,6 +221,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     user,
     userData,
     loading,
+    isAdmin: userData?.role === 'admin',
     signInWithGoogle,
     signOut,
     signUpWithEmail,
