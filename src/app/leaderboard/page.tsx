@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import MessagesButton from "@/components/MessagesButton";
 
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/lib/hooks/useAuth";
+import { useAuth } from "@/lib/contexts/AuthContext";
 import { BarChart3, Users, LogOut, Home, Map, Search, Filter, Award, TrendingUp, Calendar, ChevronDown, X, DollarSign, CheckCircle, Clock } from "lucide-react";
 import AmbientLogo from "@/components/AmbientLogo";
 import Sidebar from "@/components/Sidebar";

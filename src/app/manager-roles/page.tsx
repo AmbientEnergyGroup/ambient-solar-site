@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import MessagesButton from "@/components/MessagesButton";
 
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/lib/hooks/useAuth";
+import { useAuth } from "@/lib/contexts/AuthContext";
 import { BarChart3, Users, LogOut, Home, Map, CheckCircle2, ClipboardList, UserPlus, Clock, AlertCircle, XCircle, Paperclip, X, File, Image, FileText, Download } from "lucide-react";
 import AmbientLogo from "@/components/AmbientLogo";
 import { storage } from "@/lib/firebase/firebase";

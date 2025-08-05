@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import MessagesButton from "@/components/MessagesButton";
 
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/lib/hooks/useAuth";
+import { useAuth } from "@/lib/contexts/AuthContext";
 import { Code, LogOut, Home, Cpu, Database, FileCode, Settings, Terminal, X, Server, Eye, EyeOff, Users, Clock, Activity, UserPlus, Check, UserX, Shield, Edit, RefreshCw, Key, Trash } from "lucide-react";
 import AmbientLogo from "@/components/AmbientLogo";
 import Sidebar from "@/components/Sidebar";

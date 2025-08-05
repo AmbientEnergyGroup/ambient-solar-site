@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { useAuth } from '../lib/hooks/useAuth';
+import { useAuth } from '../lib/contexts/AuthContext';
 import { updateUserData } from '../lib/firebase/firebaseUtils';
 
 export default function UserProfile() {

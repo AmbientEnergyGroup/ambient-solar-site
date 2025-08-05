@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useTheme } from "@/lib/hooks/useTheme";
 import Sidebar from "@/components/Sidebar";
 import AmbientLogo from "@/components/AmbientLogo";
-import { useAuth } from "@/lib/hooks/useAuth";
+import { useAuth } from "@/lib/contexts/AuthContext";
 import { 
   BarChart, 
   Calendar, 
