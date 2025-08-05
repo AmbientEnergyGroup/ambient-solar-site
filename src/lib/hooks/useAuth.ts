@@ -11,6 +11,27 @@ export const useAuth = () => {
     return authContext;
   }
   
+  // If authContext is undefined, return a default context
+  if (!authContext) {
+    return {
+      user: null,
+      userData: null,
+      loading: false,
+      isAdmin: false,
+      signInWithGoogle: async () => {},
+      signOut: async () => {},
+      signUpWithEmail: async () => {},
+      signInWithEmail: async () => {},
+      sendSignInLink: async () => {},
+      signInWithLink: async () => {},
+      signInWithPhone: async () => {},
+      updateUserProfile: async () => {},
+      updateUserRole: async () => {},
+      updateUserActive: async () => {},
+      getAllUsersData: async () => [],
+    };
+  }
+  
   // If we're in a loading state (which can cause pages to hang), provide a fake user
   if (authContext.loading) {
     const fakeUser = {
