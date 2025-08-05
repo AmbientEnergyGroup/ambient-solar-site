@@ -1,0 +1,1607 @@
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import MessagesButton from "@/components/MessagesButton";
+import GoogleSheetsImport from "@/components/GoogleSheetsImport";
+
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/contexts/AuthContext";
+import Link from "next/link";
+import {
+  Search,
+  SlidersHorizontal,
+  Download,
+  FileText,
+  Pencil,
+  Filter,
+  ArrowUpDown,
+  BarChart3, 
+  Users, 
+  LogOut, 
+  Home, 
+  ChevronDown, 
+  ChevronUp, 
+  DollarSign, 
+  Zap, 
+  Calendar, 
+  Edit2
+} from "lucide-react";
+import Sidebar from "@/components/Sidebar";
+import { useTheme } from "@/lib/hooks/useTheme";
+import AmbientLogo from "@/components/AmbientLogo";
+
+// Interface for project data
+interface Project {
+  id: string;
+  customerName: string;
+  address: string;
+  installDate: string;
+  paymentAmount: number;
+  paymentDate: string;
+  siteSurveyDate?: string;
+  permitDate?: string; // New field for permit date
+  inspectionDate?: string; // New field for inspection date
+  ptoDate?: string; // New field for PTO date
+  status: "site_survey" | "install" | "pto" | "paid" | "cancelled";
+  batteryType?: string;
+  batteryQuantity?: number;
+  panelType?: string;
+  grossPPW?: string;
+  systemSize?: string;
+  financeType?: string;
+  lender?: string;
+  documents?: {
+    utilityBill?: string;
+    contract?: string;
+    permitPlans?: string;
+  };
+  userId: string;
+  commissionRate?: number; // Commission rate per kW based on tier
+  dealNumber?: number; // Which deal number this is for the user (1st, 5th, etc.)
+  createdAt?: string;
+  cancelledDate?: string; // New field for cancelled date
+}
+
+// Mock project data
+const mockProjects: Project[] = [
+  {
+    id: "1",
+    customerName: "Salvador Pineda",
+    address: "1234 Main St, City, CA",
+    installDate: "2023-04-09",
+    paymentAmount: 13415.00,
+    paymentDate: "2023-04-09",
+    status: "paid",
+    userId: "user1"
+  },
+  {
+    id: "2",
+    customerName: "Jacky",
+    address: "2345 Oak Ave, City, CA",
+    installDate: "2023-04-09",
+    paymentAmount: 12417.00,
+    paymentDate: "2023-04-09",
+    status: "paid",
+    userId: "user1"
+  },
+  {
+    id: "3",
+    customerName: "Eric Rivera",
+    address: "3456 Pine Rd, City, CA",
+    installDate: "2023-04-09",
+    paymentAmount: 12417.00,
+    paymentDate: "2023-04-09",
+    status: "paid",
+    userId: "user1"
+  },
+  {
+    id: "4",
+    customerName: "Cynthia Ayala",
+    address: "4567 Cedar Blvd, City, CA",
+    installDate: "2023-04-09",
+    paymentAmount: 12417.00,
+    paymentDate: "2023-04-09",
+    status: "paid",
+    userId: "user1"
+  },
+  {
+    id: "5",
+    customerName: "Carlos Ayala",
+    address: "5678 Spruce St, City, CA",
+    installDate: "2023-04-09",
+    paymentAmount: 12417.00,
+    paymentDate: "2023-04-09",
+    status: "paid",
+    userId: "user1"
+  },
+  {
+    id: "6",
+    customerName: "Alexander Sanchez",
+    address: "6789 Maple Dr, City, CA",
+    installDate: "2023-04-09",
+    paymentAmount: 12417.00,
+    paymentDate: "2023-04-09",
+    status: "paid",
+    userId: "user1"
+  },
+  {
+    id: "7",
+    customerName: "Jose Martinez",
+    address: "7890 Birch Ln, City, CA",
+    installDate: "2023-04-09",
+    paymentAmount: 12417.00,
+    paymentDate: "2023-04-09",
+    status: "paid",
+    userId: "user1"
+  },
+  {
+    id: "8",
+    customerName: "Hugo Gutierrez",
+    address: "8901 Willow Way, City, CA",
+    installDate: "2023-04-09",
+    paymentAmount: 12417.00,
+    paymentDate: "2023-04-09",
+    status: "paid",
+    userId: "user1"
+  },
+  {
+    id: "9",
+    customerName: "Rogelio Gutierrez",
+    address: "9012 Redwood Ct, City, CA",
+    installDate: "2023-04-09",
+    paymentAmount: 12417.00,
+    paymentDate: "2023-04-09",
+    status: "paid",
+    userId: "user1"
+  },
+  {
+    id: "10",
+    customerName: "Luis Ayala",
+    address: "10123 Aspen Pl, City, CA",
+    installDate: "2023-04-09",
+    paymentAmount: 12417.00,
+    paymentDate: "2023-04-09",
+    status: "paid",
+    userId: "user1"
+  }
+];
+
+export default function Projects() {
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [cancelledProjects, setCancelledProjects] = useState<Project[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortField, setSortField] = useState<keyof Project>("paymentDate");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [filterStatus, setFilterStatus] = useState<"all" | "cancelled" | "site_survey" | "install" | "pto" | "paid">("all");
+  const [activeTab, setActiveTab] = useState<"active" | "cancelled">("active");
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const { darkMode, toggleTheme } = useTheme();
+  const [showDocumentsModal, setShowDocumentsModal] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    installDate: "",
+    paymentDate: "",
+    siteSurveyDate: "",
+    permitDate: "",
+    inspectionDate: "",
+    ptoDate: ""
+  });
+  const [userStats, setUserStats] = useState({
+    dealCount: 0,
+    totalCommission: 0,
+    tier1Deals: 0,
+    tier2Deals: 0
+  });
+  const [companyStats, setCompanyStats] = useState({
+    totalRevenue: 0,
+    avgSystemSize: 0,
+    avgContractValue: 0
+  });
+  
+  const { user, userData, loading, signOut } = useAuth();
+  const router = useRouter();
+
+  // Function to refresh projects data
+  const refreshProjects = useCallback(() => {
+    // Add debugging for localStorage 
+    console.log("===== DEBUGGING PROJECTS =====");
+    
+    const storedProjects = localStorage.getItem('projects');
+    const storedCancelledProjects = localStorage.getItem('cancelledProjects');
+    console.log("Raw localStorage 'projects':", storedProjects);
+    console.log("Raw localStorage 'cancelledProjects':", storedCancelledProjects);
+    
+    let projectsData: Project[] = [];
+    let cancelledProjectsData: Project[] = [];
+    
+    // First check if we have any projects saved
+    if (storedProjects) {
+      try {
+        projectsData = JSON.parse(storedProjects);
+        console.log("Parsed projects from localStorage:", projectsData);
+        console.log("Total projects count:", projectsData.length);
+        
+        // Log each project's data to diagnose issues
+        projectsData.forEach((project, index) => {
+          console.log(`Project ${index + 1}:`, {
+            id: project.id,
+            name: project.customerName,
+            userId: project.userId,
+            currentUserId: user?.uid || 'no-user'
+          });
+        });
+      } catch (e) {
+        console.error("Error parsing projects from localStorage:", e);
+        projectsData = [];
+      }
+    } else {
+      // Use mock data only if we don't have any saved projects
+      console.log("No projects in localStorage, using mock data");
+      projectsData = mockProjects;
+      
+      // Save mock data to localStorage to initialize
+      localStorage.setItem('projects', JSON.stringify(mockProjects));
+    }
+    
+    // Check for cancelled projects
+    if (storedCancelledProjects) {
+      try {
+        cancelledProjectsData = JSON.parse(storedCancelledProjects);
+        console.log("Parsed cancelled projects from localStorage:", cancelledProjectsData);
+        console.log("Total cancelled projects count:", cancelledProjectsData.length);
+      } catch (e) {
+        console.error("Error parsing cancelled projects from localStorage:", e);
+        cancelledProjectsData = [];
+      }
+    } else {
+      // Initialize empty array for cancelled projects
+      localStorage.setItem('cancelledProjects', JSON.stringify([]));
+    }
+    
+    // Only show projects for the current user (unless they're an admin)
+    if (user) {
+      // Safeguard against projects with missing userId
+      projectsData = projectsData.map(project => {
+        if (!project.userId && user) {
+          // If project is missing userId, assign current user's ID
+          return { ...project, userId: user.uid };
+        }
+        return project;
+      });
+      
+      cancelledProjectsData = cancelledProjectsData.map(project => {
+        if (!project.userId && user) {
+          return { ...project, userId: user.uid };
+        }
+        return project;
+      });
+      
+      const isAdmin = true; // Temporarily make all users admins
+      
+      // More lenient filtering to ensure all projects show up
+      // Modified to handle case-insensitive or partial user ID matches when using restored sessions
+      const filteredProjects = isAdmin 
+        ? projectsData 
+        : projectsData.filter(project => {
+            // Check for exact match
+            let match = project.userId === user.uid;
+            
+            // Add fallback matching - if the project has the same email base as the current user
+            // This handles cases where user IDs might change due to session restoration
+            if (!match && user.email) {
+              const currentUserBase = user.email.split('@')[0].toLowerCase();
+              const savedEmail = localStorage.getItem('userEmail');
+              if (savedEmail) {
+                const savedEmailBase = savedEmail.split('@')[0].toLowerCase();
+                // If project belongs to a user with the same email base, consider it a match
+                if (currentUserBase === savedEmailBase) {
+                  console.log(`Project ${project.id} matched by email base`);
+                  match = true;
+                }
+              }
+            }
+            
+            if (!match) {
+              console.log(`Project ${project.id} (${project.customerName}) filtered out - userId mismatch:`, project.userId, user.uid);
+            }
+            return match;
+          });
+      
+      // Handle cancelled projects with same fallback mechanism
+      const filteredCancelledProjects = isAdmin
+        ? cancelledProjectsData
+        : cancelledProjectsData.filter(project => {
+            let match = project.userId === user.uid;
+            if (!match && user.email) {
+              const currentUserBase = user.email.split('@')[0].toLowerCase();
+              const savedEmail = localStorage.getItem('userEmail');
+              if (savedEmail) {
+                const savedEmailBase = savedEmail.split('@')[0].toLowerCase();
+                if (currentUserBase === savedEmailBase) {
+                  match = true;
+                }
+              }
+            }
+            return match;
+          });
+      
+      console.log("Current user ID:", user.uid);
+      console.log("User role:", user.role || "unknown");
+      console.log("Filtered projects count:", filteredProjects.length);
+      console.log("Filtered cancelled projects count:", filteredCancelledProjects.length);
+      
+      // Calculate user statistics - exclude cancelled projects from all metrics
+      const activeProjects = filteredProjects.filter(p => p.status !== "cancelled");
+      const dealCount = activeProjects.length;
+      const tier1Deals = activeProjects.filter(p => (p.dealNumber || 0) <= 10).length;
+      const tier2Deals = activeProjects.filter(p => (p.dealNumber || 0) > 10 && (p.dealNumber || 0) <= 20).length;
+      const totalCommission = activeProjects.reduce((sum, project) => sum + (project.paymentAmount || 0), 0);
+
+      // Calculate company statistics - exclude cancelled projects
+      const projectsWithSystemSize = activeProjects.filter(p => p.systemSize && parseFloat(p.systemSize) > 0);
+      const projectsWithPPW = activeProjects.filter(p => p.grossPPW && p.systemSize && parseFloat(p.grossPPW) > 0);
+      
+      // Calculate average system size (in kW)
+      const avgSystemSize = projectsWithSystemSize.length > 0
+        ? projectsWithSystemSize.reduce((sum, p) => sum + parseFloat(p.systemSize || '0'), 0) / projectsWithSystemSize.length
+        : 0;
+      
+      // Calculate total revenue (gross contract value sum)
+      const totalRevenue = projectsWithPPW.reduce((sum, p) => {
+        const systemSize = parseFloat(p.systemSize || '0');
+        const ppw = parseFloat(p.grossPPW || '0');
+        return sum + (systemSize * ppw * 1000); // kW * PPW * 1000 = total contract value
+      }, 0);
+      
+      // Calculate average contract value
+      const avgContractValue = projectsWithPPW.length > 0
+        ? totalRevenue / projectsWithPPW.length
+        : 0;
+      
+      // Update stats states
+      setUserStats({
+        dealCount,
+        tier1Deals,
+        tier2Deals,
+        totalCommission
+      });
+      
+      setCompanyStats({
+        totalRevenue,
+        avgSystemSize,
+        avgContractValue
+      });
+
+      // Sort projects by deal number
+      filteredProjects.sort((a, b) => {
+        const aDealNum = a.dealNumber || 0;
+        const bDealNum = b.dealNumber || 0;
+        return aDealNum - bDealNum;
+      });
+
+      // Ensure we're actually setting the projects state with the filtered projects
+      console.log("Setting projects state with:", filteredProjects);
+      setProjects(filteredProjects);
+      setCancelledProjects(filteredCancelledProjects);
+      
+      // Save to project state for quicker loading next time
+      const projectState = {
+        projects: filteredProjects,
+        cancelledProjects: filteredCancelledProjects,
+        stats: {
+          dealCount,
+          tier1Deals,
+          tier2Deals,
+          totalCommission
+        },
+        companyStats: {
+          totalRevenue,
+          avgSystemSize,
+          avgContractValue
+        }
+      };
+      
+      localStorage.setItem(`projectState_${user.uid}`, JSON.stringify(projectState));
+    }
+    
+    console.log("===== END DEBUGGING PROJECTS =====");
+  }, [user]);
+
+  // Fetch projects on component mount or refresh
+  useEffect(() => {
+    console.log("Projects effect running - user:", user?.uid);
+    if (user) {
+      // Check for force refresh flag
+      const forceRefresh = localStorage.getItem('forceProjectsRefresh');
+      if (forceRefresh === 'true') {
+        console.log("Force refresh detected, clearing cache and refreshing data");
+        localStorage.removeItem('forceProjectsRefresh');
+        localStorage.removeItem(`projectState_${user.uid}`);
+      }
+      
+      // First try to load from the cached state
+      const cachedState = localStorage.getItem(`projectState_${user.uid}`);
+      
+      if (cachedState && forceRefresh !== 'true') {
+        try {
+          const parsed = JSON.parse(cachedState);
+          console.log("Loaded projects from cached state:", parsed.projects.length);
+          setProjects(parsed.projects);
+          setCancelledProjects(parsed.cancelledProjects || []);
+          setUserStats(parsed.stats);
+          
+          // Restore company stats if available
+          if (parsed.companyStats) {
+            console.log("Restoring company stats from cache:", parsed.companyStats);
+            setCompanyStats(parsed.companyStats);
+          } else {
+            // Calculate company stats from the loaded projects if not in cache
+            console.log("Calculating company stats from cached projects");
+            const projectsWithSystemSize = parsed.projects.filter((p: Project) => p.systemSize && parseFloat(p.systemSize) > 0);
+            const projectsWithPPW = parsed.projects.filter((p: Project) => p.grossPPW && p.systemSize && parseFloat(p.grossPPW) > 0);
+            
+            // Calculate average system size (in kW)
+            const avgSystemSize = projectsWithSystemSize.length > 0
+              ? projectsWithSystemSize.reduce((sum: number, p: Project) => sum + parseFloat(p.systemSize || '0'), 0) / projectsWithSystemSize.length
+              : 0;
+            
+            // Calculate total revenue (gross contract value sum)
+            const totalRevenue = projectsWithPPW.reduce((sum: number, p: Project) => {
+              const systemSize = parseFloat(p.systemSize || '0');
+              const ppw = parseFloat(p.grossPPW || '0');
+              return sum + (systemSize * ppw * 1000); // kW * PPW * 1000 = total contract value
+            }, 0);
+            
+            // Calculate average contract value
+            const avgContractValue = projectsWithPPW.length > 0
+              ? totalRevenue / projectsWithPPW.length
+              : 0;
+            
+            setCompanyStats({
+              totalRevenue,
+              avgSystemSize,
+              avgContractValue
+            });
+          }
+        } catch (e) {
+          console.error("Error parsing cached project state:", e);
+          refreshProjects();
+        }
+      } else {
+        refreshProjects();
+      }
+    }
+  }, [refreshKey, user, refreshProjects]);
+
+  // Ensure company stats are recalculated when projects change
+  useEffect(() => {
+    if (projects.length > 0) {
+      console.log("Recalculating company stats due to projects change");
+      
+      // Only use active projects (not cancelled) for metrics
+      const activeProjects = projects.filter(p => p.status !== "cancelled");
+      const projectsWithSystemSize = activeProjects.filter(p => p.systemSize && parseFloat(p.systemSize) > 0);
+      const projectsWithPPW = activeProjects.filter(p => p.grossPPW && p.systemSize && parseFloat(p.grossPPW) > 0);
+      
+      // Calculate average system size (in kW)
+      const avgSystemSize = projectsWithSystemSize.length > 0
+        ? projectsWithSystemSize.reduce((sum, p) => sum + parseFloat(p.systemSize || '0'), 0) / projectsWithSystemSize.length
+        : 0;
+      
+      // Calculate total revenue (gross contract value sum)
+      const totalRevenue = projectsWithPPW.reduce((sum, p) => {
+        const systemSize = parseFloat(p.systemSize || '0');
+        const ppw = parseFloat(p.grossPPW || '0');
+        return sum + (systemSize * ppw * 1000); // kW * PPW * 1000 = total contract value
+      }, 0);
+      
+      // Calculate average contract value
+      const avgContractValue = projectsWithPPW.length > 0
+        ? totalRevenue / projectsWithPPW.length
+        : 0;
+      
+      setCompanyStats({
+        totalRevenue,
+        avgSystemSize,
+        avgContractValue
+      });
+      
+      // Also update the cached state with the new stats
+      if (user) {
+        const cachedState = localStorage.getItem(`projectState_${user.uid}`);
+        if (cachedState) {
+          try {
+            const parsed = JSON.parse(cachedState);
+            parsed.companyStats = {
+              totalRevenue,
+              avgSystemSize,
+              avgContractValue
+            };
+            localStorage.setItem(`projectState_${user.uid}`, JSON.stringify(parsed));
+          } catch (e) {
+            console.error("Error updating cached company stats:", e);
+          }
+        }
+      }
+    }
+  }, [projects, user]);
+
+  // Load user data from localStorage
+  useEffect(() => {
+    if (user && userData) {
+      const dealCount = userData.dealCount || 0;
+      const totalCommission = userData.totalCommission || 0;
+      
+      // Update stats with user data if available
+      setUserStats(prevStats => ({
+        ...prevStats,
+        dealCount,
+        totalCommission
+      }));
+    }
+  }, [user, userData]);
+
+  // Redirect to home if not authenticated
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push("/");
+    }
+  }, [user, loading, router]);
+
+  // Handle sort toggle
+  const toggleSort = (field: keyof Project) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  };
+
+  // Format currency
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(amount);
+  };
+
+  // Format date for display
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString();
+  };
+
+  // Filter and sort projects based on active tab
+  const getFilteredAndSortedProjects = () => {
+    const activeProjects = activeTab === "active" ? projects : cancelledProjects;
+    
+    return activeProjects
+      .filter(project => {
+        // If we're on the cancelled tab, show all cancelled projects
+        if (activeTab === "cancelled") {
+          const searchMatch = !searchTerm || 
+            (project.customerName && project.customerName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+            (project.address && project.address.toLowerCase().includes(searchTerm.toLowerCase()));
+          return searchMatch;
+        }
+        
+        // For active tab, apply regular filters
+        const statusMatch = filterStatus === "all" || project.status === filterStatus;
+        const searchMatch = !searchTerm || 
+          (project.customerName && project.customerName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (project.address && project.address.toLowerCase().includes(searchTerm.toLowerCase()));
+        
+        if (!statusMatch) {
+          console.log(`Project ${project.id} filtered out by status - wanted: ${filterStatus}, got: ${project.status}`);
+        }
+        if (!searchMatch && searchTerm) {
+          console.log(`Project ${project.id} filtered out by search - term: ${searchTerm}, name: ${project.customerName}`);
+        }
+        
+        return statusMatch && searchMatch;
+      })
+      .sort((a, b) => {
+        // Safe access with fallbacks for sorting
+        const aValue = a[sortField];
+        const bValue = b[sortField];
+        
+        if (aValue === undefined || bValue === undefined) return 0;
+        
+        if (aValue < bValue) {
+          return sortDirection === "asc" ? -1 : 1;
+        }
+        if (aValue > bValue) {
+          return sortDirection === "asc" ? 1 : -1;
+        }
+        return 0;
+      });
+  };
+  
+  const filteredAndSortedProjects = getFilteredAndSortedProjects();
+
+  // Handle viewing documents
+  const handleViewDocuments = (project: Project) => {
+    setSelectedProject(project);
+    setShowDocumentsModal(true);
+  };
+
+  // Handle opening the edit modal for a project
+  const handleOpenEditModal = (project: Project) => {
+    setSelectedProject(project);
+    setEditFormData({
+      installDate: project.installDate,
+      paymentDate: project.paymentDate,
+      siteSurveyDate: project.siteSurveyDate || "",
+      permitDate: project.permitDate || "",
+      inspectionDate: project.inspectionDate || "",
+      ptoDate: project.ptoDate || ""
+    });
+    setShowEditModal(true);
+  };
+  
+  // Handle form input changes
+  const handleEditFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setEditFormData({
+      ...editFormData,
+      [name]: value
+    });
+  };
+  
+  // Handle saving edited project
+  const handleSaveProject = () => {
+    if (!selectedProject) return;
+    
+    // Get all projects
+    const savedProjectsJSON = localStorage.getItem('projects');
+    if (savedProjectsJSON) {
+      const allProjects = JSON.parse(savedProjectsJSON);
+      
+      // Update the project in the full list
+      const updatedAllProjects = allProjects.map((project: Project) =>
+        project.id === selectedProject.id
+          ? { 
+              ...project, 
+              installDate: editFormData.installDate,
+              paymentDate: editFormData.paymentDate,
+              siteSurveyDate: editFormData.siteSurveyDate || undefined,
+              permitDate: editFormData.permitDate || undefined,
+              inspectionDate: editFormData.inspectionDate || undefined,
+              ptoDate: editFormData.ptoDate || undefined
+            }
+          : project
+      );
+      
+      // Save all projects back to storage
+      localStorage.setItem('projects', JSON.stringify(updatedAllProjects));
+      
+      // Update the filtered view for this user
+      const isAdmin = true; // Temporarily make all users admins
+      const filteredProjects = isAdmin 
+        ? updatedAllProjects 
+        : updatedAllProjects.filter((project: Project) => project.userId === user?.uid);
+        
+      setProjects(filteredProjects);
+      
+      // Force refresh to recalculate stats
+      setRefreshKey(prev => prev + 1);
+    }
+    
+    // Close the modal
+    setShowEditModal(false);
+    setSelectedProject(null);
+    
+    // Show confirmation
+    alert("Project dates updated successfully!");
+  };
+
+  // Handle opening the status modal for a project
+  const handleOpenStatusModal = (project: Project) => {
+    setSelectedProject(project);
+    setShowStatusModal(true);
+  };
+  
+  // Handle changing project status
+  const handleChangeStatus = (newStatus: Project["status"]) => {
+    if (!selectedProject) return;
+    
+    if (newStatus === "cancelled") {
+      // Move to cancelled projects
+      moveProjectToCancelled(selectedProject);
+    } else {
+      // Just update the status, but respect multi-tenancy
+      const savedProjectsJSON = localStorage.getItem('projects');
+      if (savedProjectsJSON) {
+        const allProjects = JSON.parse(savedProjectsJSON);
+        
+        // Update the status in the full project list
+        const updatedAllProjects = allProjects.map((project: Project) =>
+          project.id === selectedProject.id
+            ? { ...project, status: newStatus }
+            : project
+        );
+        
+        // Save all projects back to storage
+        localStorage.setItem('projects', JSON.stringify(updatedAllProjects));
+        
+        // Update the filtered view for this user
+        const isAdmin = true; // Temporarily make all users admins
+        const filteredProjects = isAdmin 
+          ? updatedAllProjects 
+          : updatedAllProjects.filter((project: Project) => project.userId === user?.uid);
+          
+        setProjects(filteredProjects);
+        
+        // Also update the projectState cache to persist across refreshes and tab changes
+        if (user) {
+          const projectStateKey = `projectState_${user.uid}`;
+          const cachedState = localStorage.getItem(projectStateKey);
+          
+          if (cachedState) {
+            try {
+              const parsed = JSON.parse(cachedState);
+              parsed.projects = filteredProjects;
+              localStorage.setItem(projectStateKey, JSON.stringify(parsed));
+            } catch (e) {
+              console.error("Error updating cached project state:", e);
+            }
+          }
+        }
+
+        // Force refresh to recalculate stats
+        setRefreshKey(prev => prev + 1);
+      }
+    }
+    
+    // Close the modal
+    setShowStatusModal(false);
+    setSelectedProject(null);
+  };
+  
+  // Move a project to cancelled projects
+  const moveProjectToCancelled = (project: Project) => {
+    console.log("Moving project to cancelled:", project.id, project.customerName);
+    
+    // Create a copy with cancelled status
+    const cancelledProject = {
+      ...project,
+      status: "cancelled" as const,
+      cancelledDate: new Date().toISOString() // Add cancellation date
+    };
+    
+    // Remove from active projects
+    const updatedProjects = projects.filter(p => p.id !== project.id);
+    
+    // Get all projects from storage to update
+    const storedProjectsJSON = localStorage.getItem('projects');
+    if (storedProjectsJSON) {
+      try {
+        const allProjects = JSON.parse(storedProjectsJSON);
+        const updatedAllProjects = allProjects.filter((p: Project) => p.id !== project.id);
+        localStorage.setItem('projects', JSON.stringify(updatedAllProjects));
+        console.log(`Removed project ${project.id} from active projects. New count:`, updatedAllProjects.length);
+      } catch (e) {
+        console.error("Error updating projects in localStorage:", e);
+      }
+    }
+    
+    // Add to cancelled projects
+    const updatedCancelledProjects = [...cancelledProjects, cancelledProject];
+    
+    // Get all cancelled projects from storage to update
+    const storedCancelledProjectsJSON = localStorage.getItem('cancelledProjects');
+    if (storedCancelledProjectsJSON) {
+      try {
+        const allCancelledProjects = JSON.parse(storedCancelledProjectsJSON);
+        const updatedAllCancelledProjects = [...allCancelledProjects, cancelledProject];
+        localStorage.setItem('cancelledProjects', JSON.stringify(updatedAllCancelledProjects));
+        console.log(`Added project ${project.id} to cancelled projects. New count:`, updatedAllCancelledProjects.length);
+      } catch (e) {
+        console.error("Error parsing cancelledProjects:", e);
+        localStorage.setItem('cancelledProjects', JSON.stringify([cancelledProject]));
+      }
+    } else {
+      localStorage.setItem('cancelledProjects', JSON.stringify([cancelledProject]));
+      console.log(`Created new cancelled projects array with 1 project: ${project.id}`);
+    }
+    
+    // Update state
+    setProjects(updatedProjects);
+    setCancelledProjects(updatedCancelledProjects);
+    
+    // Update the projectState cache to persist across refreshes and tab changes
+    if (user) {
+      const projectStateKey = `projectState_${user.uid}`;
+      const cachedState = localStorage.getItem(projectStateKey);
+      
+      if (cachedState) {
+        try {
+          const parsed = JSON.parse(cachedState);
+          parsed.projects = updatedProjects;
+          parsed.cancelledProjects = updatedCancelledProjects;
+          localStorage.setItem(projectStateKey, JSON.stringify(parsed));
+        } catch (e) {
+          console.error("Error updating cached project state:", e);
+        }
+      }
+    }
+    
+    // Log localStorage state after updates
+    console.log("Projects in localStorage after update:", localStorage.getItem('projects'));
+    console.log("Cancelled projects in localStorage after update:", localStorage.getItem('cancelledProjects'));
+    
+    // Force refresh to recalculate stats
+    setRefreshKey(prev => prev + 1);
+    
+    // Set active tab to cancelled to show the user their cancelled project immediately
+    setActiveTab("cancelled");
+    
+    // Show confirmation
+    alert("Project has been moved to Cancelled Projects section");
+  };
+  
+  // Handle importing projects from Google Sheets
+  const handleImportProjects = (importedProjects: Project[]) => {
+    // Get existing projects
+    const existingProjects = localStorage.getItem('projects');
+    let allProjects: Project[] = [];
+    
+    if (existingProjects) {
+      try {
+        allProjects = JSON.parse(existingProjects);
+      } catch (e) {
+        console.error("Error parsing existing projects:", e);
+        allProjects = [];
+      }
+    }
+    
+    // Add imported projects with proper deal numbers
+    const projectsWithDealNumbers = importedProjects.map((project, index) => {
+      const nextDealNumber = allProjects.length + index + 1;
+      return {
+        ...project,
+        dealNumber: nextDealNumber,
+        userId: user?.uid || 'unknown'
+      };
+    });
+    
+    // Combine existing and new projects
+    const updatedProjects = [...allProjects, ...projectsWithDealNumbers];
+    
+    // Save to localStorage
+    localStorage.setItem('projects', JSON.stringify(updatedProjects));
+    
+    // Update state
+    setProjects(prev => [...prev, ...projectsWithDealNumbers]);
+    
+    // Force refresh to recalculate stats
+    setRefreshKey(prev => prev + 1);
+    
+    // Show success message
+    alert(`Successfully imported ${importedProjects.length} projects!`);
+  };
+
+  // Reactivate a cancelled project
+  const reactivateProject = (project: Project) => {
+    if (confirm("Are you sure you want to reactivate this project?")) {
+      // Create a copy with active status
+      const reactivatedProject = {
+        ...project,
+        status: "site_survey" as const, // Default back to site survey
+      };
+      
+      // Remove from cancelled projects
+      const updatedCancelledProjects = cancelledProjects.filter(p => p.id !== project.id);
+      
+      // Get all cancelled projects from storage to update
+      const storedCancelledProjectsJSON = localStorage.getItem('cancelledProjects');
+      if (storedCancelledProjectsJSON) {
+        const allCancelledProjects = JSON.parse(storedCancelledProjectsJSON);
+        const updatedAllCancelledProjects = allCancelledProjects.filter((p: Project) => p.id !== project.id);
+        localStorage.setItem('cancelledProjects', JSON.stringify(updatedAllCancelledProjects));
+      }
+      
+      // Add to active projects
+      const updatedProjects = [...projects, reactivatedProject];
+      
+      // Get all projects from storage to update
+      const storedProjectsJSON = localStorage.getItem('projects');
+      if (storedProjectsJSON) {
+        const allProjects = JSON.parse(storedProjectsJSON);
+        const updatedAllProjects = [...allProjects, reactivatedProject];
+        localStorage.setItem('projects', JSON.stringify(updatedAllProjects));
+      } else {
+        localStorage.setItem('projects', JSON.stringify([reactivatedProject]));
+      }
+      
+      // Update state
+      setProjects(updatedProjects);
+      setCancelledProjects(updatedCancelledProjects);
+      
+      // Update the projectState cache to persist across refreshes and tab changes
+      if (user) {
+        const projectStateKey = `projectState_${user.uid}`;
+        const cachedState = localStorage.getItem(projectStateKey);
+        
+        if (cachedState) {
+          try {
+            const parsed = JSON.parse(cachedState);
+            parsed.projects = updatedProjects;
+            parsed.cancelledProjects = updatedCancelledProjects;
+            localStorage.setItem(projectStateKey, JSON.stringify(parsed));
+          } catch (e) {
+            console.error("Error updating cached project state:", e);
+          }
+        }
+      }
+      
+      // Force refresh to recalculate stats
+      setRefreshKey(prev => prev + 1);
+      
+      // Set active tab to active to show the user their reactivated project immediately
+      setActiveTab("active");
+      
+      // Show confirmation
+      alert("Project has been reactivated and moved back to active projects");
+    }
+  };
+
+  // Show loading state while checking authentication
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen theme-bg-primary">
+        <div className={`animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 ${darkMode ? 'border-amber-500' : 'border-blue-500'}`}></div>
+      </div>
+    );
+  }
+
+  // If user is not authenticated and not loading, this will render briefly before redirect
+  if (!user) {
+    return null;
+  }
+
+  return (
+    <div className="flex h-screen theme-bg-primary">
+      {/* Sidebar component */}
+      <Sidebar 
+        darkMode={darkMode}
+        signOut={signOut}
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
+      />
+
+      {/* Main content */}
+      <div className="flex-1 overflow-auto theme-bg-secondary">
+        {/* Header */}
+        <header className="standard-header">
+          <div className="standard-header-content">
+            <div className="flex items-center mb-4">
+              <button 
+                onClick={() => setSidebarOpen(!sidebarOpen)} 
+                className="theme-text-primary hover:opacity-70 transition-opacity p-1"
+              >
+                {sidebarOpen ? (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
+                  </svg>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                )}
+              </button>
+
+              {/* Centered logo when sidebar is closed */}
+              {!sidebarOpen && (
+                <div className="header-logo-center">
+                  <AmbientLogo theme={darkMode ? 'dark' : 'light'} size="xl" />
+                </div>
+              )}
+
+              <div className={`${sidebarOpen ? 'ml-4' : 'ml-auto'}`}>
+                {sidebarOpen && (
+                  <>
+                    <h1 className="text-2xl font-semibold theme-text-primary">My Projects</h1>
+                    <p className="theme-text-secondary">Track your projects and commissions</p>
+                  </>
+                )}
+              </div>
+              
+              <div className="ml-auto flex items-center space-x-3">
+                <GoogleSheetsImport 
+                  onImport={handleImportProjects}
+                  userId={user?.uid || ''}
+                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Search projects..."
+                    className="p-2 pl-10 w-64 theme-bg-tertiary border theme-border-primary rounded-lg theme-text-primary focus:outline-none focus:border-amber-500"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                  <Search className="absolute left-3 top-2.5 h-4 w-4 theme-text-secondary" />
+                </div>
+                <button
+                  onClick={() => setRefreshKey(prev => prev + 1)}
+                  className="px-3 py-2 rounded-md theme-bg-tertiary theme-text-secondary hover:theme-text-primary theme-border-primary border"
+                  title="Refresh projects"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Commission Tiers Summary */}
+        <div className="p-6">
+          <div className="theme-bg-tertiary rounded-lg shadow-md p-4 mb-6">
+            <h2 className="text-lg font-medium theme-text-primary mb-3">Commission Tiers</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className={`rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-100'} p-4`}>
+                <p className="theme-text-secondary text-sm mb-2">Tier 1 (Deals 1-10)</p>
+                <p className="theme-text-primary text-lg font-bold">${200}/kW</p>
+                <div className="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full ${darkMode ? 'bg-amber-500' : 'bg-blue-500'}`} 
+                    style={{ width: `${Math.min(userStats.tier1Deals / 10 * 100, 100)}%` }}
+                  ></div>
+                </div>
+                <p className="text-xs theme-text-secondary mt-1">
+                  {userStats.tier1Deals} of 10 completed
+                </p>
+              </div>
+              <div className={`rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-100'} p-4`}>
+                <p className="theme-text-secondary text-sm mb-2">Tier 2 (Deals 11-20)</p>
+                <p className="theme-text-primary text-lg font-bold">${250}/kW</p>
+                <div className="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full ${darkMode ? 'bg-amber-500' : 'bg-blue-500'}`} 
+                    style={{ width: `${Math.min(Math.max(userStats.tier2Deals / 10 * 100, 0), 100)}%` }}
+                  ></div>
+                </div>
+                <p className="text-xs theme-text-secondary mt-1">
+                  {userStats.tier2Deals} of 10 completed
+                </p>
+              </div>
+              <div className={`rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-100'} p-4`}>
+                <p className="theme-text-secondary text-sm mb-2">Total Earnings</p>
+                <p className="theme-text-primary text-lg font-bold">
+                  {formatCurrency(userStats.totalCommission)}
+                </p>
+                <p className="text-xs theme-text-secondary mt-1">
+                  {userStats.dealCount} total active project{userStats.dealCount !== 1 ? 's' : ''}
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          {/* Company Stats Section - Add after the Commission Tiers */}
+          <div className="theme-bg-tertiary rounded-lg shadow-md p-4 mb-6">
+            <h2 className="text-lg font-medium theme-text-primary mb-3">Company Performance</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className={`rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-100'} p-4`}>
+                <p className="theme-text-secondary text-sm mb-2">Total Revenue Generated</p>
+                <p className="theme-text-primary text-lg font-bold">
+                  {formatCurrency(companyStats.totalRevenue)}
+                </p>
+                <p className="text-xs theme-text-secondary mt-1">
+                  Based on {projects.filter(p => p.grossPPW && p.systemSize && p.status !== "cancelled").length} active contracts
+                </p>
+              </div>
+              <div className={`rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-100'} p-4`}>
+                <p className="theme-text-secondary text-sm mb-2">Average System Size</p>
+                <p className="theme-text-primary text-lg font-bold">
+                  {companyStats.avgSystemSize.toFixed(1)} kW
+                </p>
+                <p className="text-xs theme-text-secondary mt-1">
+                  Average across all projects
+                </p>
+              </div>
+              <div className={`rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-100'} p-4`}>
+                <p className="theme-text-secondary text-sm mb-2">Average Contract Value</p>
+                <p className="theme-text-primary text-lg font-bold">
+                  {formatCurrency(companyStats.avgContractValue)}
+                </p>
+                <p className="text-xs theme-text-secondary mt-1">
+                  Per solar installation
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          {/* Projects tabs and table */}
+          <div className="mb-6">
+            {/* Tabs for switching between active and cancelled projects */}
+            <div className="mb-4 flex items-center border-b theme-border-primary">
+              <button
+                onClick={() => setActiveTab("active")}
+                className={`px-4 py-2 font-medium text-sm ${
+                  activeTab === "active" 
+                    ? `border-b-2 ${darkMode ? 'border-amber-500 text-amber-500' : 'border-blue-500 text-blue-500'}` 
+                    : 'theme-text-secondary'
+                }`}
+              >
+                Active Projects
+              </button>
+              <button
+                onClick={() => setActiveTab("cancelled")}
+                className={`px-4 py-2 font-medium text-sm ${
+                  activeTab === "cancelled" 
+                    ? `border-b-2 ${darkMode ? 'border-amber-500 text-amber-500' : 'border-blue-500 text-blue-500'}` 
+                    : 'theme-text-secondary'
+                }`}
+              >
+                Cancelled Projects
+              </button>
+              
+              {activeTab === "active" && (
+                <div className="ml-auto">
+                  <select
+                    value={filterStatus}
+                    onChange={(e) => setFilterStatus(e.target.value as any)}
+                    className="p-2 theme-bg-tertiary border theme-border-primary rounded-lg theme-text-primary focus:outline-none focus:border-amber-500"
+                  >
+                    <option value="all">All Statuses</option>
+                    <option value="site_survey">Site Survey</option>
+                    <option value="install">Install</option>
+                    <option value="pto">PTO</option>
+                    <option value="paid">Paid</option>
+                  </select>
+                </div>
+              )}
+            </div>
+          
+            <div className="theme-bg-tertiary rounded-lg shadow overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="min-w-full">
+                  <thead>
+                    <tr className="border-b theme-border-primary text-left theme-bg-tertiary">
+                      <th className="px-6 py-3 text-xs font-medium theme-text-secondary uppercase tracking-wider">
+                        <button 
+                          className="flex items-center focus:outline-none"
+                          onClick={() => toggleSort("customerName")}
+                        >
+                          Customer
+                          {sortField === "customerName" && (
+                            sortDirection === "asc" ? 
+                              <ChevronUp className="ml-1 h-4 w-4" /> : 
+                              <ChevronDown className="ml-1 h-4 w-4" />
+                          )}
+                        </button>
+                      </th>
+                      <th className="px-6 py-3 text-xs font-medium theme-text-secondary uppercase tracking-wider">
+                        Address
+                      </th>
+                      <th className="px-6 py-3 text-xs font-medium theme-text-secondary uppercase tracking-wider">
+                        <button 
+                          className="flex items-center focus:outline-none"
+                          onClick={() => toggleSort("status")}
+                        >
+                          Status
+                          {sortField === "status" && (
+                            sortDirection === "asc" ? 
+                              <ChevronUp className="ml-1 h-4 w-4" /> : 
+                              <ChevronDown className="ml-1 h-4 w-4" />
+                          )}
+                        </button>
+                      </th>
+                      <th className="px-6 py-3 text-xs font-medium theme-text-secondary uppercase tracking-wider">
+                        Dates
+                      </th>
+                      <th className="px-6 py-3 text-xs font-medium theme-text-secondary uppercase tracking-wider">
+                        <button 
+                          className="flex items-center focus:outline-none"
+                          onClick={() => toggleSort("paymentAmount")}
+                        >
+                          Commission
+                          {sortField === "paymentAmount" && (
+                            sortDirection === "asc" ? 
+                              <ChevronUp className="ml-1 h-4 w-4" /> : 
+                              <ChevronDown className="ml-1 h-4 w-4" />
+                          )}
+                        </button>
+                      </th>
+                      <th className="px-6 py-3 text-xs font-medium theme-text-secondary uppercase tracking-wider text-right">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y theme-border-secondary">
+                    {filteredAndSortedProjects.length > 0 ? (
+                      filteredAndSortedProjects.map((project) => (
+                        <tr key={project.id} className="hover:theme-bg-quaternary">
+                          <td className="px-6 py-4">
+                            <div className="text-sm font-medium theme-text-primary">
+                              {project.customerName}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="text-sm theme-text-primary">
+                              {/* Extract street address only */}
+                              {project.address?.split(',')[0] || project.address}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div>
+                              {project.status === "cancelled" ? (
+                                <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                  Cancelled
+                                </span>
+                              ) : project.status === "site_survey" ? (
+                                <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                  Site Survey
+                                </span>
+                              ) : project.status === "install" ? (
+                                <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                  Install
+                                </span>
+                              ) : project.status === "pto" ? (
+                                <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">
+                                  PTO
+                                </span>
+                              ) : (
+                                <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                  Paid
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="text-xs theme-text-secondary">
+                              {activeTab === "cancelled" ? (
+                                <>
+                                  <div>Cancelled: {project.cancelledDate ? formatDate(project.cancelledDate) : 'Unknown'}</div>
+                                  {project.installDate && <div className="mt-1">Install: {formatDate(project.installDate)}</div>}
+                                </>
+                              ) : (
+                                <>
+                                  {project.installDate && <div>Install: {formatDate(project.installDate)}</div>}
+                                  {project.paymentDate && <div className="mt-1">Payment: {formatDate(project.paymentDate)}</div>}
+                                </>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="text-sm theme-text-primary">
+                              {formatCurrency(project.paymentAmount)}
+                            </div>
+                            {project.systemSize && (
+                              <div className="text-xs theme-text-secondary mt-1">
+                                System Size: {project.systemSize} kW
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 text-right text-sm font-medium">
+                            <div className="flex justify-end space-x-2">
+                              {activeTab === "cancelled" ? (
+                                <button 
+                                  onClick={() => reactivateProject(project)}
+                                  className="theme-text-secondary hover:theme-text-primary"
+                                  title="Reactivate Project"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                  </svg>
+                                </button>
+                              ) : (
+                                <>
+                                  <button 
+                                    onClick={() => handleViewDocuments(project)}
+                                    className="theme-text-secondary hover:theme-text-primary"
+                                    title="View Documents"
+                                  >
+                                    <FileText className="h-5 w-5" />
+                                  </button>
+                                  <button 
+                                    onClick={() => handleOpenEditModal(project)}
+                                    className="theme-text-secondary hover:theme-text-primary"
+                                    title="Edit Project"
+                                  >
+                                    <Pencil className="h-5 w-5" />
+                                  </button>
+                                  <button 
+                                    onClick={() => handleOpenStatusModal(project)}
+                                    className="theme-text-secondary hover:theme-text-primary"
+                                    title="Change Status"
+                                  >
+                                    <Edit2 className="h-5 w-5" />
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={6} className="px-6 py-4 text-center theme-text-secondary">
+                          {activeTab === "active" ? (
+                            <>No active projects found. Create a new set and move it to projects.</>
+                          ) : (
+                            <>No cancelled projects found.</>
+                          )}
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Documents Modal */}
+      {showDocumentsModal && selectedProject && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm z-50">
+          <div className="theme-bg-tertiary rounded-lg shadow-xl max-w-2xl w-full mx-4 theme-border-primary border">
+            <div className="p-4 border-b theme-border-primary flex items-center justify-between">
+              <h3 className="text-lg font-semibold theme-text-primary">
+                Project Documents - {selectedProject.customerName}
+              </h3>
+              <button
+                onClick={() => setShowDocumentsModal(false)}
+                className="theme-text-secondary hover:theme-text-primary"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
+            </div>
+            
+            <div className="p-6">
+              {selectedProject.documents?.utilityBill ? (
+                <div className="border theme-border-primary rounded-lg overflow-hidden">
+                  <div className="p-4 theme-bg-quaternary">
+                    <div className="flex items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" className={`h-6 w-6 mr-2 ${darkMode ? 'text-amber-500' : 'text-blue-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      <span className="theme-text-primary font-medium">Utility Bill</span>
+                    </div>
+                    
+                    <div className="mt-4 p-5 border theme-border-primary rounded-md theme-text-primary text-center">
+                      <p className="mb-2">File preview not available</p>
+                      <button 
+                        className={`inline-flex items-center px-4 py-2 rounded-md text-sm font-medium ${darkMode ? 'bg-amber-500 hover:bg-amber-600' : 'bg-blue-500 hover:bg-blue-600'} text-white`}
+                        onClick={() => window.open(selectedProject.documents?.utilityBill, '_blank')}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        Download File
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8 theme-text-secondary">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto mb-4 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+                  </svg>
+                  <p>No documents uploaded for this project</p>
+                </div>
+              )}
+            </div>
+            
+            <div className="border-t theme-border-primary p-4 flex justify-end">
+              <button
+                onClick={() => setShowDocumentsModal(false)}
+                className="px-4 py-2 theme-bg-quaternary theme-text-primary theme-border-primary border rounded-md hover:theme-bg-tertiary"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add the Edit Modal */}
+      {showEditModal && selectedProject && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 theme-bg-primary bg-opacity-75">
+          <div className="theme-bg-tertiary rounded-lg shadow-lg max-w-md w-full">
+            <div className="p-6">
+              <h2 className="text-xl font-semibold theme-text-primary mb-4">Edit Project Dates</h2>
+              
+              <form onSubmit={(e) => { e.preventDefault(); handleSaveProject(); }}>
+                {/* Site Survey Date */}
+                <div className="mb-4">
+                  <label className="block theme-text-tertiary text-sm font-medium mb-2">
+                    <Calendar className="h-4 w-4 inline-block mr-1" /> Site Survey Date
+                  </label>
+                  <input
+                    type="date"
+                    name="siteSurveyDate"
+                    className="w-full p-2 border theme-border-primary rounded focus:outline-none focus:border-amber-500 theme-bg-quaternary theme-text-primary"
+                    value={editFormData.siteSurveyDate}
+                    onChange={handleEditFormChange}
+                  />
+                </div>
+                
+                {/* Permit Date */}
+                <div className="mb-4">
+                  <label className="block theme-text-tertiary text-sm font-medium mb-2">
+                    <Calendar className="h-4 w-4 inline-block mr-1" /> Permit Date
+                  </label>
+                  <input
+                    type="date"
+                    name="permitDate"
+                    className="w-full p-2 border theme-border-primary rounded focus:outline-none focus:border-amber-500 theme-bg-quaternary theme-text-primary"
+                    value={editFormData.permitDate}
+                    onChange={handleEditFormChange}
+                  />
+                </div>
+                
+                {/* Install Date */}
+                <div className="mb-4">
+                  <label className="block theme-text-tertiary text-sm font-medium mb-2">
+                    <Calendar className="h-4 w-4 inline-block mr-1" /> Install Date
+                  </label>
+                  <input
+                    type="date"
+                    name="installDate"
+                    className="w-full p-2 border theme-border-primary rounded focus:outline-none focus:border-amber-500 theme-bg-quaternary theme-text-primary"
+                    value={editFormData.installDate}
+                    onChange={handleEditFormChange}
+                    required
+                  />
+                </div>
+                
+                {/* Inspection Date */}
+                <div className="mb-4">
+                  <label className="block theme-text-tertiary text-sm font-medium mb-2">
+                    <Calendar className="h-4 w-4 inline-block mr-1" /> Inspection Date
+                  </label>
+                  <input
+                    type="date"
+                    name="inspectionDate"
+                    className="w-full p-2 border theme-border-primary rounded focus:outline-none focus:border-amber-500 theme-bg-quaternary theme-text-primary"
+                    value={editFormData.inspectionDate}
+                    onChange={handleEditFormChange}
+                  />
+                </div>
+                
+                {/* PTO Date */}
+                <div className="mb-4">
+                  <label className="block theme-text-tertiary text-sm font-medium mb-2">
+                    <Calendar className="h-4 w-4 inline-block mr-1" /> PTO Date
+                  </label>
+                  <input
+                    type="date"
+                    name="ptoDate"
+                    className="w-full p-2 border theme-border-primary rounded focus:outline-none focus:border-amber-500 theme-bg-quaternary theme-text-primary"
+                    value={editFormData.ptoDate}
+                    onChange={handleEditFormChange}
+                  />
+                </div>
+                
+                {/* Payment Date */}
+                <div className="mb-6">
+                  <label className="block theme-text-tertiary text-sm font-medium mb-2">
+                    <DollarSign className="h-4 w-4 inline-block mr-1" /> Payment Date
+                  </label>
+                  <input
+                    type="date"
+                    name="paymentDate"
+                    className="w-full p-2 border theme-border-primary rounded focus:outline-none focus:border-amber-500 theme-bg-quaternary theme-text-primary"
+                    value={editFormData.paymentDate}
+                    onChange={handleEditFormChange}
+                    required
+                  />
+                  <p className="text-xs theme-text-secondary mt-1">
+                    <span className={darkMode ? "text-amber-400" : "text-blue-500"}>$</span> When commission will be paid out
+                  </p>
+                </div>
+                
+                <div className="flex justify-end space-x-3">
+                  <button
+                    type="button"
+                    className="px-4 py-2 theme-bg-quaternary theme-text-primary rounded hover:opacity-80 transition-colors duration-200"
+                    onClick={() => setShowEditModal(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className={`px-4 py-2 ${darkMode ? 'bg-amber-500 text-white hover:bg-amber-600' : 'bg-blue-500 text-white hover:bg-blue-600'} rounded transition-colors duration-200`}
+                  >
+                    Save Changes
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Status Change Modal */}
+      {showStatusModal && selectedProject && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
+          <div className="theme-bg-tertiary p-6 rounded-lg shadow-lg w-full max-w-md">
+            <h2 className="text-xl font-semibold theme-text-primary mb-4">Change Project Status</h2>
+            <p className="theme-text-secondary mb-4">
+              Current Status: <span className={`font-semibold ${
+                selectedProject.status === 'site_survey' ? 'text-yellow-500' :
+                selectedProject.status === 'install' ? 'text-blue-500' :
+                selectedProject.status === 'pto' ? 'text-purple-500' :
+                selectedProject.status === 'paid' ? 'text-green-500' : 'text-red-500'
+              }`}>
+                {selectedProject.status === 'site_survey' ? 'Site Survey' :
+                selectedProject.status === 'install' ? 'Install' :
+                selectedProject.status === 'pto' ? 'PTO' :
+                selectedProject.status === 'paid' ? 'Paid' : 'Cancelled'}
+              </span>
+            </p>
+            
+            <div className="space-y-2 mb-6">
+              <h3 className="theme-text-primary font-medium mb-2">Select New Status:</h3>
+              <div className="grid grid-cols-1 gap-2">
+                {selectedProject.status !== 'site_survey' && (
+                  <button 
+                    onClick={() => handleChangeStatus('site_survey')}
+                    className="px-4 py-2 text-sm rounded bg-yellow-100 text-yellow-800 hover:bg-yellow-200 transition-colors"
+                  >
+                    Site Survey
+                  </button>
+                )}
+                
+                {selectedProject.status !== 'install' && (
+                  <button 
+                    onClick={() => handleChangeStatus('install')}
+                    className="px-4 py-2 text-sm rounded bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors"
+                  >
+                    Install
+                  </button>
+                )}
+                
+                {selectedProject.status !== 'pto' && (
+                  <button 
+                    onClick={() => handleChangeStatus('pto')}
+                    className="px-4 py-2 text-sm rounded bg-purple-100 text-purple-800 hover:bg-purple-200 transition-colors"
+                  >
+                    PTO
+                  </button>
+                )}
+                
+                {selectedProject.status !== 'paid' && (
+                  <button 
+                    onClick={() => handleChangeStatus('paid')}
+                    className="px-4 py-2 text-sm rounded bg-green-100 text-green-800 hover:bg-green-200 transition-colors"
+                  >
+                    Paid
+                  </button>
+                )}
+                
+                {selectedProject.status !== 'cancelled' && (
+                  <button 
+                    onClick={() => handleChangeStatus('cancelled')}
+                    className="px-4 py-2 text-sm rounded bg-red-100 text-red-800 hover:bg-red-200 transition-colors"
+                  >
+                    Cancelled
+                  </button>
+                )}
+              </div>
+            </div>
+            
+            <div className="flex justify-end">
+              <button 
+                onClick={() => setShowStatusModal(false)}
+                className="px-4 py-2 border theme-border-primary theme-text-secondary hover:theme-text-primary rounded mr-2"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+} 
