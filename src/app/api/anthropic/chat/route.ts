@@ -17,11 +17,11 @@ export async function POST(req: Request) {
     
     // Create Anthropic client with the API key directly
     const anthropicClient = createAnthropic({
-      apiKey: apiKey, // Pass the API key directly, not relying on process.env
+      apiKey: apiKey,
     });
     
     const result = await streamText({
-      model: anthropicClient.messages("claude-3-5-sonnet-20240620"),
+      model: anthropicClient.messages("claude-3-5-sonnet-20241022"),
       messages: convertToCoreMessages(messages),
       system: "You are a helpful AI assistant",
     });

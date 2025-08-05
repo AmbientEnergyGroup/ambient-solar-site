@@ -17,11 +17,11 @@ export async function POST(req: Request) {
     
     // Create OpenAI client with the API key directly
     const openaiClient = createOpenAI({
-      apiKey: apiKey, // Pass the API key directly, not relying on process.env
+      apiKey: apiKey,
     });
     
     const result = await streamText({
-      model: openaiClient.chat("gpt-4"),
+      model: openaiClient.chat("gpt-4o"),
       messages: convertToCoreMessages(messages),
       system: "You are a helpful AI assistant",
     });
