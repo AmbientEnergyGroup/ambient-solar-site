@@ -10,6 +10,7 @@ import AmbientLogo from "@/components/AmbientLogo";
 import Sidebar from "@/components/Sidebar";
 import { useTheme } from "@/lib/hooks/useTheme";
 import ClientOnly from "@/components/ClientOnly";
+import CloserAssignmentModal from "@/components/CloserAssignmentModal";
 
 // Define the Set interface 
 interface Set {
@@ -69,6 +70,10 @@ export default function Schedule() {
   const [selectedSetDocuments, setSelectedSetDocuments] = useState<Set | null>(null);
   const [isClient, setIsClient] = useState(false);
   
+  // Closer assignment modal state
+  const [showCloserAssignmentModal, setShowCloserAssignmentModal] = useState(false);
+  const [selectedSetForAssignment, setSelectedSetForAssignment] = useState<Set | null>(null);
+  
   // Computed Date objects from timestamps (only used client-side)
   const currentMonth = isClient ? new Date(currentMonthTimestamp) : new Date(0);
   const selectedDate = selectedDateTimestamp ? new Date(selectedDateTimestamp) : null;
@@ -96,7 +101,8 @@ export default function Schedule() {
     batteryQuantity: "0"
   });
   
-  const { user, userData, loading, signOut } = useAuth();
+  const auth = useAuth();
+  const { user, userData, loading, signOut } = auth || {};
   const router = useRouter();
   const { darkMode } = useTheme();
 
@@ -227,11 +233,10 @@ export default function Schedule() {
       router.push("/");
     } else if (user) {
       console.log('Schedule page: User authenticated:', user.email);
-      // Load closers (in the future, this would come from a database)
-      // Empty for now but structure is prepared for future data
-      setClosers([
-        // Will be populated when closers are onboarded
-      ]);
+      // Load closers from Firebase if user has a region
+      if (userData?.region) {
+        loadClosersForRegion(userData.region);
+      }
     }
   }, [user, loading, router]);
 
@@ -370,6 +375,53 @@ export default function Schedule() {
   const handleViewDocuments = (set: Set) => {
     setSelectedSetDocuments(set);
     setShowDocumentsModal(true);
+  };
+
+  // Handle closer assignment
+  const handleAssignCloser = (set: Set) => {
+    setSelectedSetForAssignment(set);
+    setShowCloserAssignmentModal(true);
+  };
+
+  // Load closers for a specific region
+  const loadClosersForRegion = async (region: string) => {
+    try {
+      const { getClosersByRegion } = await import('@/lib/firebase/firebaseUtils');
+      const regionClosers = await getClosersByRegion(region);
+      
+      // Convert to the format expected by the existing closers state
+      const closersList = regionClosers.map((closer: any) => ({
+        id: closer.id,
+        name: closer.displayName
+      }));
+      
+      setClosers(closersList);
+      console.log(`Loaded ${closersList.length} closers for region ${region}`);
+    } catch (error) {
+      console.error('Error loading closers:', error);
+      setClosers([]);
+    }
+  };
+
+  // Handle closer assignment confirmation
+  const handleConfirmCloserAssignment = (setId: string, closerId: string, closerName: string) => {
+    // Update the set with the assigned closer
+    const updatedSets = sets.map(set => {
+      if (set.id === setId) {
+        return {
+          ...set,
+          closerId: closerId,
+          closerName: closerName
+        };
+      }
+      return set;
+    });
+    
+    // Save to localStorage
+    localStorage.setItem('customerSets', JSON.stringify(updatedSets));
+    setSets(updatedSets);
+    
+    console.log(`Assigned closer ${closerName} to set ${setId}`);
   };
 
   // Function to count user's closed deals from projects - modified to be safe for SSR
@@ -706,7 +758,7 @@ export default function Schedule() {
     <ClientOnly>
       {loading ? (
         <div className="flex items-center justify-center min-h-screen theme-bg-primary">
-          <div className={`animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 ${darkMode ? 'border-amber-500' : 'border-blue-500'}`}></div>
+          <div className={`animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 ${darkMode ? 'border-cyan-500' : 'border-cyan-500'}`}></div>
         </div>
       ) : !user ? (
         <div className="flex items-center justify-center min-h-screen theme-bg-primary">
@@ -714,7 +766,7 @@ export default function Schedule() {
             <p className="theme-text-primary mb-4">Please sign in to access the schedule.</p>
             <button 
               onClick={() => router.push("/")}
-              className={`px-4 py-2 rounded ${darkMode ? 'bg-amber-500 hover:bg-amber-600' : 'bg-blue-500 hover:bg-blue-600'} text-white`}
+              className={`px-4 py-2 rounded ${darkMode ? 'bg-cyan-500 hover:bg-cyan-600' : 'bg-cyan-500 hover:bg-cyan-600'} text-white`}
             >
               Go to Sign In
             </button>
@@ -793,7 +845,11 @@ export default function Schedule() {
                         Export Schedule
                       </button>
                       <button
-                        className={`px-3 py-2 rounded text-sm font-medium ${darkMode ? 'bg-amber-500 hover:bg-amber-600 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white'} transition-colors duration-200`}
+                        onClick={() => {
+                          // For now, this will show a message that individual assignment is available
+                          alert('To assign closers, click "Assign Closer" on individual appointments below.');
+                        }}
+                        className={`px-3 py-2 rounded text-sm font-medium ${darkMode ? 'bg-cyan-500 hover:bg-cyan-600 text-white' : 'bg-cyan-500 hover:bg-cyan-600 text-white'} transition-colors duration-200`}
                       >
                         Assign Closers
                       </button>
@@ -863,13 +919,13 @@ export default function Schedule() {
                           <div className="flex justify-between">
                             <span className={`
                               text-sm font-medium 
-                              ${isToday ? (darkMode ? 'bg-amber-500 text-white' : 'bg-blue-500 text-white') : ''} 
+                              ${isToday ? (darkMode ? 'bg-cyan-500 text-white' : 'bg-cyan-500 text-white') : ''} 
                               ${isToday ? 'h-6 w-6 flex items-center justify-center rounded-full' : ''}
                             `}>
                               {day.date.getDate()}
                             </span>
                             {hasAppts && (
-                              <span className={`h-2 w-2 rounded-full ${darkMode ? 'bg-amber-500' : 'bg-blue-500'}`}></span>
+                              <span className={`h-2 w-2 rounded-full ${darkMode ? 'bg-cyan-500' : 'bg-cyan-500'}`}></span>
                             )}
                           </div>
                           
@@ -977,7 +1033,10 @@ export default function Schedule() {
                                     {set.closerName}
                                   </div>
                                 ) : (
-                                  <button className="px-3 py-1.5 bg-gray-200 dark:bg-gray-700 rounded-full text-sm theme-text-secondary hover:theme-text-primary transition-colors duration-200">
+                                  <button 
+                                    onClick={() => handleAssignCloser(set)}
+                                    className="px-3 py-1.5 bg-gray-200 dark:bg-gray-700 rounded-full text-sm theme-text-secondary hover:theme-text-primary transition-colors duration-200"
+                                  >
                                     Assign Closer
                                   </button>
                                 )}
@@ -1021,7 +1080,7 @@ export default function Schedule() {
                     <div className="border theme-border-primary rounded-lg overflow-hidden">
                       <div className="p-4 theme-bg-quaternary">
                         <div className="flex items-center">
-                          <svg xmlns="http://www.w3.org/2000/svg" className={`h-6 w-6 mr-2 ${darkMode ? 'text-amber-500' : 'text-blue-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <svg xmlns="http://www.w3.org/2000/svg" className={`h-6 w-6 mr-2 ${darkMode ? 'text-cyan-500' : 'text-cyan-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                           </svg>
                           <span className="theme-text-primary font-medium">Utility Bill</span>
@@ -1049,7 +1108,7 @@ export default function Schedule() {
                                 )}
                               </div>
                               <button 
-                                className={`inline-flex items-center px-4 py-2 rounded-md text-sm font-medium ${darkMode ? 'bg-amber-500 hover:bg-amber-600' : 'bg-blue-500 hover:bg-blue-600'} text-white`}
+                                className={`inline-flex items-center px-4 py-2 rounded-md text-sm font-medium ${darkMode ? 'bg-cyan-500 hover:bg-cyan-600' : 'bg-cyan-500 hover:bg-cyan-600'} text-white`}
                                 onClick={() => window.open(selectedSetDocuments.utilityBill, '_blank')}
                               >
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1406,6 +1465,18 @@ export default function Schedule() {
           )}
         </div>
       )}
+
+      {/* Closer Assignment Modal */}
+      <CloserAssignmentModal
+        isVisible={showCloserAssignmentModal}
+        onClose={() => {
+          setShowCloserAssignmentModal(false);
+          setSelectedSetForAssignment(null);
+        }}
+        set={selectedSetForAssignment}
+        onAssignCloser={handleConfirmCloserAssignment}
+        userRegion={userData?.region}
+      />
     </ClientOnly>
   );
 } 

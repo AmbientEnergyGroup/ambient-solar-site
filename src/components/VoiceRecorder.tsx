@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useDeepgram } from '../lib/contexts/DeepgramContext';
 import { addDocument } from '../lib/firebase/firebaseUtils';
-import { motion } from 'framer-motion';
 
 export default function VoiceRecorder() {
   const [isRecording, setIsRecording] = useState(false);
@@ -39,17 +38,7 @@ export default function VoiceRecorder() {
       </button>
       {isRecording && (
         <div className="mt-4 p-4 bg-gray-100 rounded-lg">
-          <motion.div
-            animate={{
-              scale: [1, 1.2, 1],
-            }}
-            transition={{
-              duration: 1.5,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-            className="w-8 h-8 bg-blue-500 rounded-full mx-auto mb-4"
-          />
+          <div className="w-8 h-8 bg-blue-500 rounded-full mx-auto mb-4 animate-pulse" />
           <p className="text-sm text-gray-600">{realtimeTranscript}</p>
         </div>
       )}

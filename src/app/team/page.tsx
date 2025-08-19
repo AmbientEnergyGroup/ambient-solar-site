@@ -21,7 +21,8 @@ export default function Team() {
   const WEEKLY_GOAL_KW = 200;
   const { darkMode } = useTheme();
   
-  const { user, loading, signOut } = useAuth();
+  const auth = useAuth();
+  const { user, loading, signOut } = auth || {};
   const router = useRouter();
 
   // Add a new useEffect for client-side initialization
@@ -94,7 +95,7 @@ export default function Team() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen theme-bg-primary">
-        <div className={`animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 ${darkMode ? 'border-amber-500' : 'border-blue-500'}`}></div>
+                        <div className={`animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 ${darkMode ? 'border-cyan-500' : 'border-cyan-500'}`}></div>
       </div>
     );
   }
@@ -156,7 +157,7 @@ export default function Team() {
               {/* Removed search bar */}
               <div className="flex items-center gap-2">
                 {/* Removed Filter button */}
-                <button className={`px-4 py-2 ${darkMode ? 'bg-amber-500 hover:bg-amber-600' : 'bg-blue-500 hover:bg-blue-600'} text-white rounded-lg font-medium transition-colors duration-200 flex items-center`}>
+                <button className={`px-4 py-2 ${darkMode ? 'bg-cyan-500 hover:bg-cyan-600' : 'bg-cyan-500 hover:bg-cyan-600'} text-white rounded-lg font-medium transition-colors duration-200 flex items-center`}>
                   <Plus className="h-4 w-4 mr-2" />
                   Add Member
                 </button>
@@ -171,7 +172,7 @@ export default function Team() {
                     <p className="text-sm theme-text-secondary">Lancaster California</p>
                     <p className="text-2xl font-bold theme-text-primary">{lancasterTeamSize}</p>
                   </div>
-                  <div className={`p-3 rounded-full border-2 border-black ${darkMode ? 'bg-amber-500 bg-opacity-20' : 'bg-blue-500 bg-opacity-20'}`}> {/* Black border for Lancaster */}
+                  <div className={`p-3 rounded-full border-2 border-black ${darkMode ? 'bg-cyan-500 bg-opacity-20' : 'bg-cyan-500 bg-opacity-20'}`}> {/* Black border for Lancaster */}
                     <OfficeLogos office="Lancaster" size={48} />
                   </div>
                 </div>
@@ -210,7 +211,7 @@ export default function Team() {
                             className="absolute top-0 flex flex-col items-center"
                             style={{ left: markerLeft }}
                           >
-                            <div className={`w-6 h-6 rounded-full border-2 ${darkMode ? 'border-amber-500 bg-amber-400' : 'border-orange-400 bg-orange-300'} shadow-lg flex items-center justify-center`}>
+                            <div className={`w-6 h-6 rounded-full border-2 ${darkMode ? 'border-cyan-500 bg-cyan-400' : 'border-cyan-400 bg-cyan-300'} shadow-lg flex items-center justify-center`}>
                               <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7" fill="#fff"/></svg>
                             </div>
                           </div>

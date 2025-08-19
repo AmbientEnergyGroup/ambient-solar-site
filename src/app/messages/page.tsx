@@ -36,7 +36,8 @@ export default function MessagesPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
-  const { user, loading, signOut } = useAuth();
+  const auth = useAuth();
+  const { user, loading, signOut } = auth || {};
   const router = useRouter();
   const { darkMode } = useTheme();
 
@@ -222,7 +223,7 @@ export default function MessagesPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen theme-bg-primary">
-        <div className={`animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 ${darkMode ? 'border-amber-500' : 'border-blue-500'}`}></div>
+                        <div className={`animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 ${darkMode ? 'border-cyan-500' : 'border-cyan-500'}`}></div>
       </div>
     );
   }
@@ -279,7 +280,7 @@ export default function MessagesPage() {
             <div className="theme-bg-tertiary rounded-xl shadow-lg border theme-border-primary overflow-hidden flex-1 flex flex-col">
               <div className="px-6 py-4 flex justify-between items-center bg-gradient-to-r from-gray-750 to-gray-800 border-b theme-border-primary">
                 <div className="flex items-center gap-2">
-                  <MessageCircle className={`h-5 w-5 ${darkMode ? 'text-amber-500' : 'text-blue-500'}`} />
+                  <MessageCircle className={`h-5 w-5 ${darkMode ? 'text-cyan-500' : 'text-cyan-500'}`} />
                   <h3 className="text-lg font-medium theme-text-primary">Team Messages</h3>
                 </div>
                 <div className="text-sm theme-text-secondary">
@@ -315,7 +316,7 @@ export default function MessagesPage() {
                             <div className="space-y-2">
                               {message.attachments.map((attachment, index) => (
                                 <div key={index} className="flex items-center p-2 rounded-lg theme-bg-tertiary">
-                                  <div className={`p-2 rounded-md theme-bg-quaternary ${darkMode ? 'text-amber-500' : 'text-blue-500'}`}>
+                                  <div className={`p-2 rounded-md theme-bg-quaternary ${darkMode ? 'text-cyan-500' : 'text-cyan-500'}`}>
                                     {attachment.type.startsWith('image/') 
                                       ? <Image className="h-5 w-5" />
                                       : attachment.type.includes('pdf')
@@ -331,7 +332,7 @@ export default function MessagesPage() {
                                     href={attachment.url} 
                                     target="_blank" 
                                     rel="noopener noreferrer"
-                                    className={`p-2 rounded-md theme-bg-quaternary ${darkMode ? 'text-amber-500' : 'text-blue-500'} hover:opacity-80`}
+                                    className={`p-2 rounded-md theme-bg-quaternary ${darkMode ? 'text-cyan-500' : 'text-cyan-500'} hover:opacity-80`}
                                     download={attachment.name}
                                   >
                                     <Download className="h-4 w-4" />
@@ -380,7 +381,7 @@ export default function MessagesPage() {
                   <input
                     type="text"
                     placeholder="Type your message..."
-                    className="flex-1 theme-bg-quaternary theme-text-primary theme-border-primary border rounded-lg px-4 py-2 mr-2 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    className="flex-1 theme-bg-quaternary theme-text-primary theme-border-primary border rounded-lg px-4 py-2 mr-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
                     onKeyDown={(e) => {
@@ -411,7 +412,7 @@ export default function MessagesPage() {
                   
                   <button
                     onClick={sendMessage}
-                    className={`px-4 py-2 rounded-lg ${darkMode ? 'bg-amber-500 text-gray-900' : 'bg-blue-500 text-white'} font-medium`}
+                    className={`px-4 py-2 rounded-lg ${darkMode ? 'bg-cyan-500 text-gray-900' : 'bg-cyan-500 text-white'} font-medium`}
                     disabled={(!newMessage.trim() && attachments.length === 0) || isUploading}
                   >
                     {isUploading ? 'Uploading...' : 'Send'}

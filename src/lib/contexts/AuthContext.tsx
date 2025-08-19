@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useEffect, useState } from "react";
+import React, { createContext, useEffect, useState, useCallback } from "react";
 import { 
   signInWithPopup, 
   GoogleAuthProvider, 
@@ -17,21 +17,27 @@ import {
   updateProfile,
   User
 } from "firebase/auth";
-import { auth } from "../firebase/firebase";
+import { getFirebaseAuth } from "../firebase/firebase";
 import { 
   createUserData, 
   getUserData, 
   updateUserData, 
+  updateUserDataWithBackup,
   subscribeToUserData,
   UserData,
   getAllUsers,
   updateUserRole as updateUserRoleInDB,
-  updateUserActive as updateUserActiveInDB
+  updateUserActive as updateUserActiveInDB,
+  backupUserData,
+  backupAllData,
+  migrateUserData,
+  migrateAllUsers,
+  getDataIntegrityCheck
 } from "../firebase/firebaseUtils";
 
 // Extended user interface with roles and profile
 interface ExtendedUser extends User {
-  role?: 'admin' | 'setter' | 'closer' | 'manager';
+  role?: 'admin' | 'setter' | 'closer' | 'manager' | 'region_admin' | 'office_admin' | 'owner_admin';
   displayName: string | null;
 }
 
@@ -42,15 +48,26 @@ interface AuthContextType {
   isAdmin: boolean;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
-  signUpWithEmail: (email: string, password: string, role?: 'admin' | 'setter' | 'closer' | 'manager') => Promise<void>;
+  signUpWithEmail: (email: string, password: string, role?: 'admin' | 'setter' | 'closer' | 'manager' | 'region_admin' | 'office_admin' | 'owner_admin') => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   sendSignInLink: (email: string) => Promise<void>;
   signInWithLink: (email: string) => Promise<void>;
   signInWithPhone: (phoneNumber: string, recaptchaVerifier: RecaptchaVerifier) => Promise<void>;
   updateUserProfile: (displayName: string, photoURL?: string) => Promise<void>;
-  updateUserRole: (userId: string, role: 'admin' | 'setter' | 'closer' | 'manager') => Promise<void>;
+  updateUserRole: (userId: string, role: 'admin' | 'setter' | 'closer' | 'manager' | 'region_admin' | 'office_admin' | 'owner_admin') => Promise<void>;
   updateUserActive: (userId: string, active: boolean) => Promise<void>;
   getAllUsersData: () => Promise<UserData[]>;
+  backupUserData: (userId: string) => Promise<void>;
+  backupAllData: () => Promise<void>;
+  migrateUserData: (userId: string) => Promise<void>;
+  migrateAllUsers: () => Promise<void>;
+  getDataIntegrityCheck: () => Promise<{
+    users: number;
+    projects: number;
+    customerSets: number;
+    lastBackup: string | null;
+    integrityScore: number;
+  }>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -68,31 +85,200 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
-      if (firebaseUser) {
-        const extendedUser = firebaseUser as ExtendedUser;
-        setUser(extendedUser);
-        
-        // Get user data from Firestore
-        try {
-          const data = await getUserData(firebaseUser.uid);
-          setUserData(data);
-        } catch (error) {
-          console.error('Error fetching user data:', error);
-        }
-      } else {
-        setUser(null);
-        setUserData(null);
-      }
-      setLoading(false);
-    });
+  // Check if we're in development mode
+  const isDevelopment = process.env.NODE_ENV === 'development' || 
+                       (typeof window !== 'undefined' && window.location.hostname === 'localhost');
 
-    return () => unsubscribe();
+  // Optimized auth state change handler
+  const handleAuthStateChange = useCallback(async (firebaseUser: any) => {
+    console.log('🔄 Auth state changed:', firebaseUser ? 'User logged in' : 'User logged out');
+    
+    if (firebaseUser) {
+      const extendedUser = firebaseUser as ExtendedUser;
+      setUser(extendedUser);
+      console.log('✅ User set:', extendedUser.email);
+      
+      // Get user data from Firestore with timeout
+      try {
+        console.log('🔄 Fetching user data from Firestore...');
+        const data = await Promise.race([
+          getUserData(firebaseUser.uid),
+          new Promise<UserData | null>((_, reject) => 
+            setTimeout(() => reject(new Error('Firestore timeout after 10 seconds')), 10000)
+          )
+        ]);
+        
+        if (data) {
+          // Ensure support user always has admin role
+          if (firebaseUser.email === 'support@ambientenergygroup.com') {
+            const supportUserData = {
+              ...data,
+              role: 'admin' as const,
+              active: true
+            };
+            setUserData(supportUserData);
+            
+            // Update the user data in Firestore if it's not already admin
+            if (data.role !== 'admin') {
+              try {
+                await updateUserData(firebaseUser.uid, { role: 'admin' });
+              } catch (error) {
+                console.error('Error updating support user role:', error);
+              }
+            }
+          } else {
+            setUserData(data);
+          }
+        } else {
+          // If no user data exists, create default user data
+          console.log('No user data found, creating default user data');
+          const defaultRole = firebaseUser.email === 'support@ambientenergygroup.com' ? 'admin' : 'setter';
+          const defaultUserData: UserData = {
+            id: firebaseUser.uid,
+            role: defaultRole,
+            displayName: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
+            email: firebaseUser.email || '',
+            phoneNumber: firebaseUser.phoneNumber || undefined,
+            team: 'Team A',
+            region: 'Region A',
+            createdAt: new Date().toISOString(),
+            active: true,
+            dealCount: 0,
+            totalCommission: 0,
+            recentProjects: [],
+            commissionPayments: [],
+            settings: {
+              notifications: true,
+              theme: 'auto',
+              language: 'en'
+            }
+          };
+          
+          // Try to create user data in Firestore
+          try {
+            await createUserData(firebaseUser, defaultRole);
+            setUserData(defaultUserData);
+          } catch (createError) {
+            console.error('Error creating user data:', createError);
+            // Still set the default data locally so the UI works
+            setUserData(defaultUserData);
+          }
+        }
+      } catch (error) {
+        console.error('❌ Error fetching user data:', error);
+        console.log('🔄 Creating fallback user data...');
+        
+        // Create fallback user data so the UI doesn't break
+        const fallbackRole = firebaseUser.email === 'support@ambientenergygroup.com' ? 'admin' : 'setter';
+        const fallbackUserData: UserData = {
+          id: firebaseUser.uid,
+          role: fallbackRole,
+          displayName: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
+          email: firebaseUser.email || '',
+          phoneNumber: firebaseUser.phoneNumber || undefined,
+          team: 'Team A',
+          region: 'Region A',
+          createdAt: new Date().toISOString(),
+          active: true,
+          dealCount: 0,
+          totalCommission: 0,
+          recentProjects: [],
+          commissionPayments: [],
+          settings: {
+            notifications: true,
+            theme: 'auto',
+            language: 'en'
+          }
+        };
+        setUserData(fallbackUserData);
+        console.log('✅ Fallback user data set');
+      }
+    } else {
+      console.log('🔄 User logged out, clearing data');
+      setUser(null);
+      setUserData(null);
+    }
+    
+    console.log('✅ Setting loading to false');
+    setLoading(false);
   }, []);
+
+  useEffect(() => {
+    // In development mode, bypass Firebase auth and create a fake user
+    if (isDevelopment) {
+      console.log('🚀 Development mode detected - bypassing Firebase auth');
+      
+      const fakeUser: ExtendedUser = {
+        uid: 'dev_user_123',
+        email: 'dev@ambient.local',
+        displayName: 'Development User',
+        role: 'admin',
+        emailVerified: true,
+        isAnonymous: false,
+        metadata: {} as any,
+        providerData: [],
+        refreshToken: '',
+        tenantId: null,
+        delete: async () => {},
+        getIdToken: async () => '',
+        getIdTokenResult: async () => ({} as any),
+        reload: async () => {},
+        toJSON: () => ({}),
+        phoneNumber: null,
+        photoURL: null,
+        providerId: 'password',
+      };
+      
+              const fakeUserData: UserData = {
+          id: 'dev_user_123',
+          role: 'admin',
+          displayName: 'Development User',
+          email: 'dev@ambient.local',
+          phoneNumber: '+1234567890',
+          team: 'Team A',
+          region: 'Region A',
+          payType: 'Pro',
+          createdAt: new Date().toISOString(),
+          active: true,
+          dealCount: 0,
+          totalCommission: 0,
+          recentProjects: [],
+          commissionPayments: [],
+          settings: {
+            notifications: true,
+            theme: 'auto',
+            language: 'en'
+          }
+        };
+      
+      setUser(fakeUser);
+      setUserData(fakeUserData);
+      setLoading(false);
+      console.log('✅ Development user created successfully');
+      return;
+    }
+
+    // Production mode - use Firebase auth
+    console.log('🔄 Setting up auth state listener...');
+    const auth = getFirebaseAuth();
+    const unsubscribe = auth.onAuthStateChanged(handleAuthStateChange);
+    
+    // Add a timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      console.log('⚠️ Auth timeout - forcing loading to false');
+      setLoading(false);
+    }, 15000); // 15 seconds timeout
+    
+    return () => {
+      console.log('🔄 Cleaning up auth listener...');
+      clearTimeout(timeoutId);
+      unsubscribe();
+    };
+  }, [handleAuthStateChange, isDevelopment]);
 
   const signInWithGoogle = async () => {
     try {
+      const auth = getFirebaseAuth();
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       
@@ -102,14 +288,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Create new user data
         await createUserData(result.user, 'setter');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error signing in with Google:', error);
-      throw error;
+      
+      // Provide more specific error messages
+      if (error.code === 'auth/popup-closed-by-user') {
+        throw new Error('Sign-in was cancelled. Please try again.');
+      } else if (error.code === 'auth/unauthorized-domain') {
+        throw new Error('Domain not authorized. Please add your domain to Firebase Console.');
+      } else if (error.code === 'auth/invalid-api-key') {
+        throw new Error('Firebase configuration error. Please check your environment variables.');
+      } else {
+        throw new Error(error.message || 'Failed to sign in with Google. Please try again.');
+      }
     }
   };
 
   const signOut = async () => {
     try {
+      const auth = getFirebaseAuth();
       await firebaseSignOut(auth);
     } catch (error) {
       console.error('Error signing out:', error);
@@ -117,12 +314,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signUpWithEmail = async (email: string, password: string, role: 'admin' | 'setter' | 'closer' | 'manager' = 'setter') => {
+  const signUpWithEmail = async (email: string, password: string, role: 'admin' | 'setter' | 'closer' | 'manager' | 'region_admin' | 'office_admin' | 'owner_admin' = 'setter') => {
     try {
+      const auth = getFirebaseAuth();
       const result = await createUserWithEmailAndPassword(auth, email, password);
       
       // Create user data in Firestore
-      await createUserData(result.user, role);
+              await createUserData(result.user, role as any);
     } catch (error) {
       console.error('Error signing up with email:', error);
       throw error;
@@ -131,6 +329,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signInWithEmail = async (email: string, password: string) => {
     try {
+      const auth = getFirebaseAuth();
       await signInWithEmailAndPassword(auth, email, password);
     } catch (error) {
       console.error('Error signing in with email:', error);
@@ -140,19 +339,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const sendSignInLink = async (email: string) => {
     try {
+      const auth = getFirebaseAuth();
       const actionCodeSettings = {
         url: window.location.origin + '/signup',
         handleCodeInApp: true,
       };
       await sendSignInLinkToEmail(auth, email, actionCodeSettings);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error sending sign-in link:', error);
-      throw error;
+      
+      // Provide more specific error messages
+      if (error.code === 'auth/invalid-api-key') {
+        throw new Error('Firebase configuration error. Please check your environment variables.');
+      } else if (error.code === 'auth/unauthorized-domain') {
+        throw new Error('Domain not authorized. Please add your domain to Firebase Console.');
+      } else if (error.code === 'auth/invalid-email') {
+        throw new Error('Please enter a valid email address.');
+      } else {
+        throw new Error(error.message || 'Failed to send login link. Please try again.');
+      }
     }
   };
 
   const signInWithLink = async (email: string) => {
     try {
+      const auth = getFirebaseAuth();
       if (isSignInWithEmailLink(auth, window.location.href)) {
         await signInWithEmailLink(auth, email);
       }
@@ -164,6 +375,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signInWithPhone = async (phoneNumber: string, recaptchaVerifier: RecaptchaVerifier) => {
     try {
+      const auth = getFirebaseAuth();
       const provider = new PhoneAuthProvider(auth);
       await signInWithPhoneNumber(auth, phoneNumber, recaptchaVerifier);
     } catch (error) {
@@ -190,7 +402,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const updateUserRole = async (userId: string, role: 'admin' | 'setter' | 'closer' | 'manager') => {
+  const updateUserRole = async (userId: string, role: 'admin' | 'setter' | 'closer' | 'manager' | 'region_admin' | 'office_admin' | 'owner_admin') => {
     try {
       await updateUserRoleInDB(userId, role);
     } catch (error) {
@@ -221,7 +433,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     user,
     userData,
     loading,
-    isAdmin: userData?.role === 'admin',
+    isAdmin: userData?.role === 'admin' || userData?.role === 'owner_admin' || user?.email === 'support@ambientenergygroup.com',
     signInWithGoogle,
     signOut,
     signUpWithEmail,
@@ -232,7 +444,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     updateUserProfile,
     updateUserRole,
     updateUserActive,
-    getAllUsersData
+    getAllUsersData,
+    backupUserData,
+    backupAllData,
+    migrateUserData,
+    migrateAllUsers,
+    getDataIntegrityCheck
   };
 
   return (

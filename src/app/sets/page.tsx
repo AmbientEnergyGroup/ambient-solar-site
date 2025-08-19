@@ -42,7 +42,7 @@ interface Set {
   isSpanishSpeaker: boolean;
   notes: string;
   createdAt: string;
-  status?: "active" | "inactive" | "not_closed"; // Add not_closed status
+  status?: "active" | "inactive" | "not_closed" | "closed"; // Add closed status
   utilityBill?: string; // Add utility bill field
   userId: string; // Add userId to track which user owns this set
 }
@@ -120,7 +120,7 @@ export default function Sets() {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortField, setSortField] = useState<keyof Set>("appointmentDate");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
-  const [activeTab, setActiveTab] = useState<"active" | "not_closed">("active");
+  const [activeTab, setActiveTab] = useState<"active" | "not_closed" | "closed">("active");
   const [showCloseModal, setShowCloseModal] = useState(false);
   const [currentSetId, setCurrentSetId] = useState<string | null>(null);
   const [isClosedVerified, setIsClosedVerified] = useState(false);
@@ -130,20 +130,26 @@ export default function Sets() {
   const [closeFormData, setCloseFormData] = useState({
     customerName: "",
     systemSize: "",
-    grossPPW: "",
-    adders: [] as string[],
     lender: "",
     financeType: "",
+    batteryType: "",
+    batteryQuantity: "0",
     panelType: "",
+    grossPPW: "",
     siteSurveyDate: "",
-    siteSurveyTime: "",
     permitDate: "",
     installDate: "",
     inspectionDate: "",
     ptoDate: "",
     paymentDate: "",
-    batteryType: "",
-    batteryQuantity: "0"
+    adders: [],
+    siteSurveyTime: "",
+    // Reset adder fields
+    eaBattery: false,
+    backupBattery: false,
+    mpu: false,
+    hti: false,
+    reroof: false
   });
   const [showDocumentsModal, setShowDocumentsModal] = useState(false);
   const [selectedSetDocuments, setSelectedSetDocuments] = useState<Set | null>(null);
@@ -172,7 +178,8 @@ export default function Sets() {
   const [leadSource, setLeadSource] = useState("");
   const [utilityBill, setUtilityBill] = useState<File | null>(null);
   
-  const { user, loading, signOut } = useAuth();
+  const auth = useAuth();
+  const { user, loading, signOut } = auth || {};
   const router = useRouter();
 
   // Function to update user role based on number of sets
@@ -307,6 +314,23 @@ export default function Sets() {
     localStorage.setItem('customerSets', JSON.stringify(updatedSets));
   };
 
+  // Handle marking a set as closed (moves to closed status)
+  const handleMarkAsClosed = (set: Set) => {
+    if (!isClient) return;
+    
+    // Update the set status to closed
+    const updatedSets = sets.map(s => 
+      s.id === set.id ? { ...s, status: "closed" as const } : s
+    );
+    setSets(updatedSets as Set[]);
+    localStorage.setItem('customerSets', JSON.stringify(updatedSets));
+    
+    // Show success message
+    alert(`Set "${set.customerName}" marked as closed! You can now move it to Projects for commission tracking.`);
+    
+    console.log('Set marked as closed:', set);
+  };
+
   // Handle rescheduling
   const handleReschedule = (id: string) => {
     if (!isClient) return;
@@ -433,6 +457,13 @@ export default function Sets() {
         grossPPW: closeFormData.grossPPW,
         financeType: closeFormData.financeType,
         lender: closeFormData.lender,
+        // Include specific adder fields for accurate commission calculation
+        eaBattery: closeFormData.eaBattery,
+        backupBattery: closeFormData.backupBattery,
+        mpu: closeFormData.mpu,
+        hti: closeFormData.hti,
+        reroof: closeFormData.reroof,
+        // Legacy fields for compatibility
         adders: closeFormData.adders,
         batteryType: closeFormData.batteryType,
         batteryQuantity: parseInt(closeFormData.batteryQuantity) || 0,
@@ -509,7 +540,13 @@ export default function Sets() {
         ptoDate: "",
         paymentDate: "",
         adders: [],
-        siteSurveyTime: ""
+        siteSurveyTime: "",
+        // Reset adder fields
+        eaBattery: false,
+        backupBattery: false,
+        mpu: false,
+        hti: false,
+        reroof: false
       });
       
       // Show confirmation with commission details
@@ -723,7 +760,7 @@ export default function Sets() {
     <ClientOnly>
       {loading ? (
         <div className="flex items-center justify-center min-h-screen theme-bg-primary">
-          <div className={`animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 ${darkMode ? 'border-amber-500' : 'border-blue-500'}`}></div>
+                          <div className={`animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 ${darkMode ? 'border-cyan-500' : 'border-cyan-500'}`}></div>
         </div>
       ) : !user ? null : (
         <div className="flex h-screen theme-bg-primary">
@@ -780,16 +817,22 @@ export default function Sets() {
                 
                 <div className="flex border-b theme-border-secondary">
                   <button 
-                    className={`py-2 px-4 text-lg font-medium ${activeTab === "active" ? (darkMode ? "text-amber-500 border-b-2 border-amber-500" : "text-blue-500 border-b-2 border-blue-500") : "theme-text-secondary hover:theme-text-primary"}`}
+                    className={`py-2 px-4 text-lg font-medium ${activeTab === "active" ? (darkMode ? "text-cyan-500 border-b-2 border-cyan-500" : "text-cyan-500 border-b-2 border-cyan-500") : "theme-text-secondary hover:theme-text-primary"}`}
                     onClick={() => setActiveTab("active")}
                   >
                     Sets Active
                   </button>
                   <button 
-                    className={`py-2 px-4 text-lg font-medium ${activeTab === "not_closed" ? (darkMode ? "text-amber-500 border-b-2 border-amber-500" : "text-blue-500 border-b-2 border-blue-500") : "theme-text-secondary hover:theme-text-primary"}`}
+                    className={`py-2 px-4 text-lg font-medium ${activeTab === "not_closed" ? (darkMode ? "text-cyan-500 border-b-2 border-cyan-500" : "text-cyan-500 border-b-2 border-cyan-500") : "theme-text-secondary hover:theme-text-primary"}`}
                     onClick={() => setActiveTab("not_closed")}
                   >
                     Sets Not Closed
+                  </button>
+                  <button 
+                    className={`py-2 px-4 text-lg font-medium ${activeTab === "closed" ? "text-cyan-500 border-b-2 border-cyan-500" : "theme-text-secondary hover:theme-text-primary"}`}
+                    onClick={() => setActiveTab("closed")}
+                  >
+                    Closed Sets
                   </button>
                 </div>
               </div>
@@ -803,7 +846,7 @@ export default function Sets() {
                   <input
                     type="text"
                     placeholder="Search sets..."
-                    className="p-2 pl-10 w-full md:w-64 theme-bg-tertiary border theme-border-primary rounded-lg theme-text-primary focus:outline-none focus:border-amber-500"
+                    className="p-2 pl-10 w-full md:w-64 theme-bg-tertiary border theme-border-primary rounded-lg theme-text-primary focus:outline-none focus:border-cyan-500"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
@@ -813,7 +856,7 @@ export default function Sets() {
                 <div className="flex items-center gap-2">
                   <button 
                     onClick={() => setShowNewSetModal(true)}
-                    className={`px-4 py-2 ${darkMode ? 'bg-amber-500 hover:bg-amber-600' : 'bg-blue-500 hover:bg-blue-600'} text-white rounded-lg font-medium transition-colors duration-200`}
+                    className={`px-4 py-2 ${darkMode ? 'bg-cyan-500 hover:bg-cyan-600' : 'bg-cyan-500 hover:bg-cyan-600'} text-white rounded-lg font-medium transition-colors duration-200`}
                   >
                     + New Set
                   </button>
@@ -933,6 +976,10 @@ export default function Sets() {
                                 <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
                                   Not Closed
                                 </span>
+                              ) : set.status === "closed" ? (
+                                <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-cyan-100 text-cyan-800">
+                                  Closed
+                                </span>
                               ) : (
                                 <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
                                   Inactive
@@ -973,10 +1020,33 @@ export default function Sets() {
                                       Documents
                                     </button>
                                     <button
+                                      onClick={() => handleMarkAsClosed(set)}
+                                      className="px-2.5 py-1 rounded text-xs bg-cyan-500 hover:bg-cyan-600 text-white"
+                                    >
+                                      Mark as Closed
+                                    </button>
+                                    <button
                                       onClick={() => handleReactivate(set.id)}
-                                      className={`px-2.5 py-1 rounded text-xs ${darkMode ? 'bg-amber-500 hover:bg-amber-600 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white'}`}
+                                      className={`px-2.5 py-1 rounded text-xs ${darkMode ? 'bg-cyan-500 hover:bg-cyan-600 text-white' : 'bg-cyan-500 hover:bg-cyan-600 text-white'}`}
                                     >
                                       Reactivate
+                                    </button>
+                                  </>
+                                )}
+                                
+                                {activeTab === "closed" && (
+                                  <>
+                                    <button
+                                      onClick={() => handleViewDocuments(set)}
+                                      className={`px-2.5 py-1 rounded text-xs ${darkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+                                    >
+                                      Documents
+                                    </button>
+                                    <button
+                                      onClick={() => prepareToMoveToProjects(set.id)}
+                                      className="px-2.5 py-1 rounded text-xs bg-green-500 hover:bg-green-600 text-white"
+                                    >
+                                      Move to Projects
                                     </button>
                                   </>
                                 )}
@@ -987,7 +1057,10 @@ export default function Sets() {
                       ) : (
                         <tr>
                           <td colSpan={5} className="px-6 py-4 text-center theme-text-secondary">
-                            {searchTerm ? "No sets match your search" : "No sets found. Click '+ New Set' to create one."}
+                            {searchTerm ? "No sets match your search" : 
+                              activeTab === "closed" ? "No closed sets found. Mark sets as closed to see them here." :
+                              activeTab === "not_closed" ? "No sets in 'Not Closed' status found." :
+                              "No active sets found. Click '+ New Set' to create one."}
                           </td>
                         </tr>
                       )}
@@ -1018,7 +1091,7 @@ export default function Sets() {
                       <input
                         id="close-verification"
                         type="checkbox"
-                        className={`w-5 h-5 rounded border-gray-600 bg-gray-700 ${darkMode ? 'text-amber-500 focus:ring-amber-500' : 'text-blue-500 focus:ring-blue-500'} focus:ring-opacity-50`}
+                                                        className={`w-5 h-5 rounded border-gray-600 bg-gray-700 ${darkMode ? 'text-cyan-500 focus:ring-cyan-500' : 'text-cyan-500 focus:ring-cyan-500'} focus:ring-opacity-50`}
                         checked={isClosedVerified}
                         onChange={(e) => setIsClosedVerified(e.target.checked)}
                       />
@@ -1041,7 +1114,7 @@ export default function Sets() {
                         <input
                           type="text"
                           name="customerName"
-                          className={`w-full p-2 border theme-border-primary rounded focus:outline-none ${darkMode ? 'focus:border-amber-500' : 'focus:border-blue-500'} theme-bg-quaternary theme-text-primary`}
+                          className={`w-full p-2 border theme-border-primary rounded focus:outline-none ${darkMode ? 'focus:border-cyan-500' : 'focus:border-cyan-500'} theme-bg-quaternary theme-text-primary`}
                           value={closeFormData.customerName}
                           onChange={handleFormChange}
                           required
@@ -1057,7 +1130,7 @@ export default function Sets() {
                           <input
                             type="text"
                             name="systemSize"
-                            className={`w-full p-2 border theme-border-primary rounded focus:outline-none ${darkMode ? 'focus:border-amber-500' : 'focus:border-blue-500'} theme-bg-quaternary theme-text-primary`}
+                            className={`w-full p-2 border theme-border-primary rounded focus:outline-none ${darkMode ? 'focus:border-cyan-500' : 'focus:border-cyan-500'} theme-bg-quaternary theme-text-primary`}
                             value={closeFormData.systemSize}
                             onChange={handleFormChange}
                             required
@@ -1070,13 +1143,13 @@ export default function Sets() {
                           <input
                             type="text"
                             name="grossPPW"
-                            className="w-full p-2 border theme-border-primary rounded focus:outline-none focus:border-amber-500 theme-bg-quaternary theme-text-primary"
+                            className="w-full p-2 border theme-border-primary rounded focus:outline-none focus:border-cyan-500 theme-bg-quaternary theme-text-primary"
                             value={closeFormData.grossPPW}
                             onChange={handleFormChange}
                             required
                           />
                           <p className="text-xs theme-text-secondary mt-1">
-                            <span className={darkMode ? "text-amber-400" : "text-blue-500"}>$</span> Price Per Watt determines total system cost and your commission
+                            <span className={darkMode ? "text-cyan-400" : "text-cyan-500"}>$</span> Price Per Watt determines total system cost and your commission
                           </p>
                         </div>
                       </div>
@@ -1084,31 +1157,69 @@ export default function Sets() {
                       {/* Adders Multi-select */}
                       <div className="mb-4">
                         <label className="block theme-text-tertiary text-sm font-medium mb-2">
-                          Adders
+                          Adders (for commission calculation)
                         </label>
                         <div className="grid grid-cols-2 gap-2">
-                          {['Battery', 'MPU', 'Reroof', 'HTI', 'Sub Panel', 'Panel Removal'].map((adder) => (
-                            <div key={adder} className="flex items-center">
-                              <input
-                                type="checkbox"
-                                id={`adder-${adder.toLowerCase().replace(' ', '-')}`}
-                                checked={closeFormData.adders.includes(adder)}
-                                onChange={(e) => {
-                                  const newAdders = e.target.checked 
-                                    ? [...closeFormData.adders, adder]
-                                    : closeFormData.adders.filter(a => a !== adder);
-                                  setCloseFormData({...closeFormData, adders: newAdders});
-                                }}
-                                className={`w-4 h-4 rounded border-gray-600 bg-gray-700 ${darkMode ? 'text-amber-500 focus:ring-amber-500' : 'text-blue-500 focus:ring-blue-500'} focus:ring-opacity-50`}
-                              />
-                              <label 
-                                htmlFor={`adder-${adder.toLowerCase().replace(' ', '-')}`}
-                                className="ml-2 block theme-text-primary text-sm"
-                              >
-                                {adder}
-                              </label>
-                            </div>
-                          ))}
+                          <div className="flex items-center">
+                            <input
+                              type="checkbox"
+                              id="adder-ea-battery"
+                              checked={closeFormData.eaBattery}
+                              onChange={(e) => setCloseFormData({...closeFormData, eaBattery: e.target.checked})}
+                              className={`w-4 h-4 rounded border-gray-600 bg-gray-700 ${darkMode ? 'text-cyan-500 focus:ring-cyan-500' : 'text-cyan-500 focus:ring-cyan-500'} focus:ring-opacity-50`}
+                            />
+                            <label htmlFor="adder-ea-battery" className="ml-2 block theme-text-primary text-sm">
+                              E/A Battery ($8,000)
+                            </label>
+                          </div>
+                          <div className="flex items-center">
+                            <input
+                              type="checkbox"
+                              id="adder-backup-battery"
+                              checked={closeFormData.backupBattery}
+                              onChange={(e) => setCloseFormData({...closeFormData, backupBattery: e.target.checked})}
+                              className={`w-4 h-4 rounded border-gray-600 bg-gray-700 ${darkMode ? 'text-cyan-500 focus:ring-cyan-500' : 'text-cyan-500 focus:ring-cyan-500'} focus:ring-opacity-50`}
+                            />
+                            <label htmlFor="adder-backup-battery" className="ml-2 block theme-text-primary text-sm">
+                              Backup Battery ($13,000)
+                            </label>
+                          </div>
+                          <div className="flex items-center">
+                            <input
+                              type="checkbox"
+                              id="adder-mpu"
+                              checked={closeFormData.mpu}
+                              onChange={(e) => setCloseFormData({...closeFormData, mpu: e.target.checked})}
+                              className={`w-4 h-4 rounded border-gray-600 bg-gray-700 ${darkMode ? 'text-cyan-500 focus:ring-cyan-500' : 'text-cyan-500 focus:ring-cyan-500'} focus:ring-opacity-50`}
+                            />
+                            <label htmlFor="adder-mpu" className="ml-2 block theme-text-primary text-sm">
+                              MPU ($3,500)
+                            </label>
+                          </div>
+                          <div className="flex items-center">
+                            <input
+                              type="checkbox"
+                              id="adder-hti"
+                              checked={closeFormData.hti}
+                              onChange={(e) => setCloseFormData({...closeFormData, hti: e.target.checked})}
+                              className={`w-4 h-4 rounded border-gray-600 bg-gray-700 ${darkMode ? 'text-cyan-500 focus:ring-cyan-500' : 'text-cyan-500 focus:ring-cyan-500'} focus:ring-opacity-50`}
+                            />
+                            <label htmlFor="adder-hti" className="ml-2 block theme-text-primary text-sm">
+                              HTI ($2,500)
+                            </label>
+                          </div>
+                          <div className="flex items-center">
+                            <input
+                              type="checkbox"
+                              id="adder-reroof"
+                              checked={closeFormData.reroof}
+                              onChange={(e) => setCloseFormData({...closeFormData, reroof: e.target.checked})}
+                              className={`w-4 h-4 rounded border-gray-600 bg-gray-700 ${darkMode ? 'text-cyan-500 focus:ring-cyan-500' : 'text-cyan-500 focus:ring-cyan-500'} focus:ring-opacity-50`}
+                            />
+                            <label htmlFor="adder-reroof" className="ml-2 block theme-text-primary text-sm">
+                              Reroof ($15,000)
+                            </label>
+                          </div>
                         </div>
                       </div>
                       
@@ -1121,7 +1232,7 @@ export default function Sets() {
                           <input
                             type="text"
                             name="lender"
-                            className={`w-full p-2 border theme-border-primary rounded focus:outline-none ${darkMode ? 'focus:border-amber-500' : 'focus:border-blue-500'} theme-bg-quaternary theme-text-primary`}
+                            className={`w-full p-2 border theme-border-primary rounded focus:outline-none ${darkMode ? 'focus:border-cyan-500' : 'focus:border-cyan-500'} theme-bg-quaternary theme-text-primary`}
                             value={closeFormData.lender}
                             onChange={handleFormChange}
                             required
@@ -1134,7 +1245,7 @@ export default function Sets() {
                           <input
                             type="text"
                             name="financeType"
-                            className="w-full p-2 border theme-border-primary rounded focus:outline-none focus:border-amber-500 theme-bg-quaternary theme-text-primary"
+                            className="w-full p-2 border theme-border-primary rounded focus:outline-none focus:border-cyan-500 theme-bg-quaternary theme-text-primary"
                             value={closeFormData.financeType}
                             onChange={handleFormChange}
                             required
@@ -1150,7 +1261,7 @@ export default function Sets() {
                         <input
                           type="text"
                           name="panelType"
-                          className="w-full p-2 border theme-border-primary rounded focus:outline-none focus:border-amber-500 theme-bg-quaternary theme-text-primary"
+                          className="w-full p-2 border theme-border-primary rounded focus:outline-none focus:border-cyan-500 theme-bg-quaternary theme-text-primary"
                           value={closeFormData.panelType}
                           onChange={handleFormChange}
                           required
@@ -1158,7 +1269,7 @@ export default function Sets() {
                       </div>
                       
                       {/* Battery fields hidden if not selected in adders */}
-                      {closeFormData.adders.includes('Battery') && (
+                      {(closeFormData.eaBattery || closeFormData.backupBattery) && (
                         <div className="mb-4 grid grid-cols-2 gap-4">
                           <div>
                             <label className="block theme-text-tertiary text-sm font-medium mb-2">
@@ -1167,7 +1278,7 @@ export default function Sets() {
                             <input
                               type="text"
                               name="batteryType"
-                              className="w-full p-2 border theme-border-primary rounded focus:outline-none focus:border-amber-500 theme-bg-quaternary theme-text-primary"
+                              className="w-full p-2 border theme-border-primary rounded focus:outline-none focus:border-cyan-500 theme-bg-quaternary theme-text-primary"
                               value={closeFormData.batteryType}
                               onChange={handleFormChange}
                             />
@@ -1179,7 +1290,7 @@ export default function Sets() {
                             <input
                               type="number"
                               name="batteryQuantity"
-                              className="w-full p-2 border theme-border-primary rounded focus:outline-none focus:border-amber-500 theme-bg-quaternary theme-text-primary"
+                              className="w-full p-2 border theme-border-primary rounded focus:outline-none focus:border-cyan-500 theme-bg-quaternary theme-text-primary"
                               value={closeFormData.batteryQuantity}
                               onChange={handleFormChange}
                               min="0"
@@ -1198,7 +1309,7 @@ export default function Sets() {
                           <input
                             type="date"
                             name="siteSurveyDate"
-                            className="w-full p-2 border theme-border-primary rounded focus:outline-none focus:border-amber-500 theme-bg-quaternary theme-text-primary"
+                            className="w-full p-2 border theme-border-primary rounded focus:outline-none focus:border-cyan-500 theme-bg-quaternary theme-text-primary"
                             value={closeFormData.siteSurveyDate}
                             onChange={handleFormChange}
                             required
@@ -1211,7 +1322,7 @@ export default function Sets() {
                           <input
                             type="time"
                             name="siteSurveyTime"
-                            className="w-full p-2 border theme-border-primary rounded focus:outline-none focus:border-amber-500 theme-bg-quaternary theme-text-primary"
+                            className="w-full p-2 border theme-border-primary rounded focus:outline-none focus:border-cyan-500 theme-bg-quaternary theme-text-primary"
                             value={closeFormData.siteSurveyTime}
                             onChange={handleFormChange}
                             required
@@ -1257,7 +1368,7 @@ export default function Sets() {
                             Other dates (permit, install, inspection, PTO, and payment) can be added later after the site survey is completed.
                             <br/>
                             <span className="mt-1 inline-block">
-                              <span className={darkMode ? "text-amber-400" : "text-blue-500"}>Note:</span> For accounts 1-20, payment dates will be automatically set to the Friday of the next week's payroll.
+                              <span className={darkMode ? "text-cyan-400" : "text-cyan-500"}>Note:</span> For accounts 1-20, payment dates will be automatically set to the Friday of the next week's payroll.
                             </span>
                           </p>
                         </div>
@@ -1277,7 +1388,7 @@ export default function Sets() {
                             disabled={!isClosedVerified}
                             className={`px-4 py-2 rounded text-white flex items-center ${
                               isClosedVerified 
-                                ? (darkMode ? 'bg-amber-500 hover:bg-amber-600' : 'bg-blue-500 hover:bg-blue-600') 
+                                ? (darkMode ? 'bg-cyan-500 hover:bg-cyan-600' : 'bg-cyan-500 hover:bg-cyan-600') 
                                 : 'bg-gray-500 cursor-not-allowed'
                             }`}
                           >
@@ -1313,7 +1424,7 @@ export default function Sets() {
                 <div className="p-6">
                   {formSubmitted ? (
                     <div className="text-center py-8">
-                      <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full ${darkMode ? 'bg-amber-500' : 'bg-blue-500'} mb-4`}>
+                      <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full ${darkMode ? 'bg-cyan-500' : 'bg-cyan-500'} mb-4`}>
                         <Check className="h-8 w-8 text-white" />
                       </div>
                       <h3 className="text-xl font-semibold theme-text-primary mb-2">Set Created Successfully!</h3>
@@ -1330,16 +1441,16 @@ export default function Sets() {
                               onClick={() => setCurrentStep(index)}
                               className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors duration-200 ${
                                 currentStep === index
-                                  ? (darkMode ? 'border-amber-500 text-amber-500' : 'border-blue-500 text-blue-500') 
+                                  ? (darkMode ? 'border-cyan-500 text-cyan-500' : 'border-cyan-500 text-cyan-500') 
                                   : 'border-transparent theme-text-secondary hover:theme-text-primary'
                               }`}
                             >
                               <div className="flex items-center">
                                 <span className={`flex items-center justify-center h-6 w-6 rounded-full text-xs mr-2 ${
                                   currentStep > index
-                                    ? (darkMode ? 'bg-amber-500 text-white' : 'bg-blue-500 text-white')
-                                    : currentStep === index
-                                    ? (darkMode ? 'border border-amber-500 text-amber-500' : 'border border-blue-500 text-blue-500')
+                                                                      ? (darkMode ? 'bg-cyan-500 text-white' : 'bg-cyan-500 text-white')
+                                  : currentStep === index
+                                  ? (darkMode ? 'border border-cyan-500 text-cyan-500' : 'border border-cyan-500 text-cyan-500')
                                     : 'theme-bg-quaternary theme-text-secondary'
                                 }`}>
                                   {currentStep > index ? (
@@ -1419,7 +1530,7 @@ export default function Sets() {
                                 <label className="flex items-center">
                                   <input
                                     type="checkbox"
-                                    className={`h-4 w-4 ${darkMode ? 'text-amber-500' : 'text-blue-500'} border theme-border-primary rounded focus:ring-0`}
+                                    className={`h-4 w-4 ${darkMode ? 'text-cyan-500' : 'text-cyan-500'} border theme-border-primary rounded focus:ring-0`}
                                     checked={isSpanishSpeaker}
                                     onChange={(e) => setIsSpanishSpeaker(e.target.checked)}
                                   />
@@ -1435,7 +1546,7 @@ export default function Sets() {
                                 className={`px-6 py-2.5 rounded-md font-medium transition-colors duration-200 ${
                                   !firstName || !lastName || !phoneNumber
                                     ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
-                                    : darkMode ? 'bg-amber-500 hover:bg-amber-600 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white'
+                                    : darkMode ? 'bg-cyan-500 hover:bg-cyan-600 text-white' : 'bg-cyan-500 hover:bg-cyan-600 text-white'
                                 }`}
                               >
                                 Next Step
@@ -1536,7 +1647,7 @@ export default function Sets() {
                                 className={`px-6 py-2.5 rounded-md font-medium transition-colors duration-200 ${
                                   !address
                                     ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
-                                    : darkMode ? 'bg-amber-500 hover:bg-amber-600 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white'
+                                    : darkMode ? 'bg-cyan-500 hover:bg-cyan-600 text-white' : 'bg-cyan-500 hover:bg-cyan-600 text-white'
                                 }`}
                               >
                                 Next Step
@@ -1586,8 +1697,8 @@ export default function Sets() {
                                       className={`block p-3 border rounded-md cursor-pointer transition-colors duration-200 ${
                                         appointmentType === type
                                           ? (darkMode 
-                                            ? 'border-amber-500 bg-amber-500 bg-opacity-10 text-amber-500' 
-                                            : 'border-blue-500 bg-blue-500 bg-opacity-10 text-blue-500')
+                                            ? 'border-cyan-500 bg-cyan-500 bg-opacity-10 text-cyan-500' 
+                                            : 'border-cyan-500 bg-cyan-500 bg-opacity-10 text-cyan-500')
                                           : 'theme-border-primary theme-text-primary hover:theme-bg-quaternary'
                                       }`}
                                     >
@@ -1602,11 +1713,11 @@ export default function Sets() {
                                       <span className="flex items-center">
                                         <span className={`w-4 h-4 mr-2 rounded-full border flex items-center justify-center ${
                                           appointmentType === type
-                                            ? (darkMode ? 'border-amber-500' : 'border-blue-500')
+                                            ? (darkMode ? 'border-cyan-500' : 'border-cyan-500')
                                             : 'theme-border-primary'
                                         }`}>
                                           {appointmentType === type && (
-                                            <span className={`w-2 h-2 rounded-full ${darkMode ? 'bg-amber-500' : 'bg-blue-500'}`}></span>
+                                            <span className={`w-2 h-2 rounded-full ${darkMode ? 'bg-cyan-500' : 'bg-cyan-500'}`}></span>
                                           )}
                                         </span>
                                         {type}
@@ -1641,7 +1752,7 @@ export default function Sets() {
                                 className={`px-6 py-2.5 rounded-md font-medium transition-colors duration-200 ${
                                   !appointmentDate || !appointmentTime
                                     ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
-                                    : darkMode ? 'bg-amber-500 hover:bg-amber-600 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white'
+                                    : darkMode ? 'bg-cyan-500 hover:bg-cyan-600 text-white' : 'bg-cyan-500 hover:bg-cyan-600 text-white'
                                 }`}
                               >
                                 Next Step
@@ -1674,7 +1785,7 @@ export default function Sets() {
                               <div className="space-y-2">
                                 <label className="block w-full cursor-pointer">
                                   <div className={`flex flex-col items-center justify-center p-6 border-2 border-dashed theme-border-primary rounded-md hover:theme-bg-tertiary transition-colors duration-200 ${utilityBill ? 'bg-opacity-50' : ''}`}>
-                                    <Upload className={`h-8 w-8 mb-2 ${darkMode ? 'text-amber-500' : 'text-blue-500'}`} />
+                                    <Upload className={`h-8 w-8 mb-2 ${darkMode ? 'text-cyan-500' : 'text-cyan-500'}`} />
                                     {!utilityBill ? (
                                       <>
                                         <p className="text-sm theme-text-primary font-medium">Click to upload utility bill</p>
@@ -1719,7 +1830,7 @@ export default function Sets() {
                                       key={source} 
                                       className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium cursor-pointer ${
                                         leadSource === source
-                                          ? (darkMode ? 'bg-amber-500 text-white' : 'bg-blue-500 text-white')
+                                          ? (darkMode ? 'bg-cyan-500 text-white' : 'bg-cyan-500 text-white')
                                           : 'theme-bg-tertiary theme-text-secondary hover:theme-text-primary'
                                       } transition-colors duration-150`}
                                     >
@@ -1748,7 +1859,7 @@ export default function Sets() {
                               <button
                                 onClick={handleNewSetSubmit}
                                 className={`px-6 py-2.5 rounded-md font-medium transition-colors duration-200 ${
-                                  darkMode ? 'bg-amber-500 hover:bg-amber-600 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white'
+                                  darkMode ? 'bg-cyan-500 hover:bg-cyan-600 text-white' : 'bg-cyan-500 hover:bg-cyan-600 text-white'
                                 }`}
                               >
                                 Submit Set
@@ -1787,7 +1898,7 @@ export default function Sets() {
                     <div className="border theme-border-primary rounded-lg overflow-hidden">
                       <div className="p-4 theme-bg-quaternary">
                         <div className="flex items-center">
-                          <svg xmlns="http://www.w3.org/2000/svg" className={`h-6 w-6 mr-2 ${darkMode ? 'text-amber-500' : 'text-blue-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <svg xmlns="http://www.w3.org/2000/svg" className={`h-6 w-6 mr-2 ${darkMode ? 'text-cyan-500' : 'text-cyan-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                           </svg>
                           <span className="theme-text-primary font-medium">Utility Bill</span>
@@ -1805,7 +1916,7 @@ export default function Sets() {
                                 ></iframe>
                               </div>
                               <button 
-                                className={`inline-flex items-center px-4 py-2 rounded-md text-sm font-medium ${darkMode ? 'bg-amber-500 hover:bg-amber-600' : 'bg-blue-500 hover:bg-blue-600'} text-white`}
+                                className={`inline-flex items-center px-4 py-2 rounded-md text-sm font-medium ${darkMode ? 'bg-cyan-500 hover:bg-cyan-600' : 'bg-cyan-500 hover:bg-cyan-600'} text-white`}
                                 onClick={() => window.open(selectedSetDocuments.utilityBill, '_blank')}
                               >
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1818,7 +1929,7 @@ export default function Sets() {
                             <div className="p-5 border theme-border-primary rounded-md theme-text-primary text-center">
                               <p className="mb-2">File preview not available</p>
                               <button 
-                                className={`inline-flex items-center px-4 py-2 rounded-md text-sm font-medium ${darkMode ? 'bg-amber-500 hover:bg-amber-600' : 'bg-blue-500 hover:bg-blue-600'} text-white`}
+                                className={`inline-flex items-center px-4 py-2 rounded-md text-sm font-medium ${darkMode ? 'bg-cyan-500 hover:bg-cyan-600' : 'bg-cyan-500 hover:bg-cyan-600'} text-white`}
                                 onClick={() => window.open(selectedSetDocuments.utilityBill, '_blank')}
                               >
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">

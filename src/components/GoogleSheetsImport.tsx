@@ -161,7 +161,7 @@ export default function GoogleSheetsImport({ onImport, userId }: GoogleSheetsImp
         onClick={() => setIsOpen(true)}
         className={`inline-flex items-center px-4 py-2 rounded-lg font-medium transition-colors ${
           darkMode 
-            ? 'bg-amber-500 hover:bg-amber-600 text-white' 
+                                          ? 'bg-cyan-500 hover:bg-cyan-600 text-white' 
             : 'bg-blue-500 hover:bg-blue-600 text-white'
         }`}
       >
@@ -176,7 +176,7 @@ export default function GoogleSheetsImport({ onImport, userId }: GoogleSheetsImp
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center">
-                <FileSpreadsheet className={`h-6 w-6 mr-3 ${darkMode ? 'text-amber-500' : 'text-blue-500'}`} />
+                <FileSpreadsheet className={`h-6 w-6 mr-3 ${darkMode ? 'text-cyan-500' : 'text-cyan-500'}`} />
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                   Import from Google Sheets
                 </h2>
@@ -363,7 +363,7 @@ export default function GoogleSheetsImport({ onImport, userId }: GoogleSheetsImp
                           isLoading
                             ? 'bg-gray-300 dark:bg-gray-600 cursor-not-allowed'
                             : darkMode
-                              ? 'bg-amber-500 hover:bg-amber-600 text-white'
+                              ? 'bg-cyan-500 hover:bg-cyan-600 text-white'
                               : 'bg-blue-500 hover:bg-blue-600 text-white'
                         }`}
                       >

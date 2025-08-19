@@ -12,10 +12,61 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Initialize Firebase
-const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const storage = getStorage(app);
+// Initialize Firebase only once with lazy loading
+let app: any;
+let auth: any;
+let db: any;
+let storage: any;
 
+// Lazy initialization function
+const initializeFirebase = () => {
+  if (!app) {
+    if (!getApps().length) {
+      app = initializeApp(firebaseConfig);
+    } else {
+      app = getApp();
+    }
+    auth = getAuth(app);
+    db = getFirestore(app);
+    storage = getStorage(app);
+  }
+  return { app, auth, db, storage };
+};
+
+// Initialize immediately but don't block
+if (typeof window !== 'undefined') {
+  // Use requestIdleCallback for non-blocking initialization
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(() => initializeFirebase());
+  } else {
+    // Fallback for browsers without requestIdleCallback
+    setTimeout(initializeFirebase, 0);
+  }
+} else {
+  // Server-side initialization
+  initializeFirebase();
+}
+
+// Export getter functions for lazy loading
+export const getFirebaseApp = () => {
+  if (!app) initializeFirebase();
+  return app;
+};
+
+export const getFirebaseAuth = () => {
+  if (!auth) initializeFirebase();
+  return auth;
+};
+
+export const getFirebaseDB = () => {
+  if (!db) initializeFirebase();
+  return db;
+};
+
+export const getFirebaseStorage = () => {
+  if (!storage) initializeFirebase();
+  return storage;
+};
+
+// Legacy exports for backward compatibility
 export { app, auth, db, storage };

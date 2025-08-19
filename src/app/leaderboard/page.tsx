@@ -254,13 +254,13 @@ const getBadges = (user: LeaderboardUser): Badge[] => {
       id: "sales-leader",
       title: "Sales Leader",
       icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-amber-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-cyan-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       ),
-      bgColor: "bg-gradient-to-br from-amber-600 to-amber-800",
-      borderColor: "border-amber-500",
-      glowColor: "shadow-amber-500/30"
+      bgColor: "bg-gradient-to-br from-cyan-600 to-cyan-800",
+      borderColor: "border-cyan-500",
+      glowColor: "shadow-cyan-500/30"
     });
   }
   
@@ -376,7 +376,8 @@ export default function Leaderboard() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  const { user, loading, signOut } = useAuth();
+  const auth = useAuth();
+  const { user, loading, signOut } = auth || {};
   const router = useRouter();
   const { darkMode } = useTheme();
 
@@ -513,7 +514,7 @@ export default function Leaderboard() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen theme-bg-primary">
-        <div className={`animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 ${darkMode ? 'border-amber-500' : 'border-blue-500'}`}></div>
+        <div className={`animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 ${darkMode ? 'border-cyan-500' : 'border-cyan-500'}`}></div>
       </div>
     );
   }
@@ -589,7 +590,7 @@ export default function Leaderboard() {
                         setTimePeriod("week");
                         setShowTimeDropdown(false);
                       }}
-                      className={`w-full text-left px-3 py-2 rounded flex items-center ${timePeriod === 'week' ? (darkMode ? 'bg-amber-500 text-gray-900' : 'bg-blue-500 text-white') : 'theme-text-primary hover:theme-text-secondary'}`}
+                      className={`w-full text-left px-3 py-2 rounded flex items-center ${timePeriod === 'week' ? (darkMode ? 'bg-cyan-500 text-gray-900' : 'bg-cyan-500 text-white') : 'theme-text-primary hover:theme-text-secondary'}`}
                     >
                       This Week
                     </button>
@@ -598,7 +599,7 @@ export default function Leaderboard() {
                         setTimePeriod("month");
                         setShowTimeDropdown(false);
                       }}
-                      className={`w-full text-left px-3 py-2 rounded flex items-center ${timePeriod === 'month' ? (darkMode ? 'bg-amber-500 text-gray-900' : 'bg-blue-500 text-white') : 'theme-text-primary hover:theme-text-secondary'}`}
+                      className={`w-full text-left px-3 py-2 rounded flex items-center ${timePeriod === 'month' ? (darkMode ? 'bg-cyan-500 text-gray-900' : 'bg-cyan-500 text-white') : 'theme-text-primary hover:theme-text-secondary'}`}
                     >
                       This Month
                     </button>
@@ -626,7 +627,7 @@ export default function Leaderboard() {
                         setMetric("sales");
                         setShowMetricDropdown(false);
                       }}
-                      className={`w-full text-left px-3 py-2 rounded flex items-center ${metric === 'sales' ? (darkMode ? 'bg-amber-500 text-gray-900' : 'bg-blue-500 text-white') : 'theme-text-primary hover:theme-text-secondary'}`}
+                      className={`w-full text-left px-3 py-2 rounded flex items-center ${metric === 'sales' ? (darkMode ? 'bg-cyan-500 text-gray-900' : 'bg-cyan-500 text-white') : 'theme-text-primary hover:theme-text-secondary'}`}
                     >
                       Sales
                     </button>
@@ -635,7 +636,7 @@ export default function Leaderboard() {
                         setMetric("doors");
                         setShowMetricDropdown(false);
                       }}
-                      className={`w-full text-left px-3 py-2 rounded flex items-center ${metric === 'doors' ? (darkMode ? 'bg-amber-500 text-gray-900' : 'bg-blue-500 text-white') : 'theme-text-primary hover:theme-text-secondary'}`}
+                      className={`w-full text-left px-3 py-2 rounded flex items-center ${metric === 'doors' ? (darkMode ? 'bg-cyan-500 text-gray-900' : 'bg-cyan-500 text-white') : 'theme-text-primary hover:theme-text-secondary'}`}
                     >
                       Doors Knocked
                     </button>
@@ -644,7 +645,7 @@ export default function Leaderboard() {
                         setMetric("appointments");
                         setShowMetricDropdown(false);
                       }}
-                      className={`w-full text-left px-3 py-2 rounded flex items-center ${metric === 'appointments' ? (darkMode ? 'bg-amber-500 text-gray-900' : 'bg-blue-500 text-white') : 'theme-text-primary hover:theme-text-secondary'}`}
+                      className={`w-full text-left px-3 py-2 rounded flex items-center ${metric === 'appointments' ? (darkMode ? 'bg-cyan-500 text-gray-900' : 'bg-cyan-500 text-white') : 'theme-text-primary hover:theme-text-secondary'}`}
                     >
                       Appointments Set
                     </button>
@@ -653,7 +654,7 @@ export default function Leaderboard() {
                         setMetric("bills");
                         setShowMetricDropdown(false);
                       }}
-                      className={`w-full text-left px-3 py-2 rounded flex items-center ${metric === 'bills' ? (darkMode ? 'bg-amber-500 text-gray-900' : 'bg-blue-500 text-white') : 'theme-text-primary hover:theme-text-secondary'}`}
+                      className={`w-full text-left px-3 py-2 rounded flex items-center ${metric === 'bills' ? (darkMode ? 'bg-cyan-500 text-gray-900' : 'bg-cyan-500 text-white') : 'theme-text-primary hover:theme-text-secondary'}`}
                     >
                       Bills Pulled
                     </button>
@@ -662,7 +663,7 @@ export default function Leaderboard() {
                         setMetric("conversion");
                         setShowMetricDropdown(false);
                       }}
-                      className={`w-full text-left px-3 py-2 rounded flex items-center ${metric === 'conversion' ? (darkMode ? 'bg-amber-500 text-gray-900' : 'bg-blue-500 text-white') : 'theme-text-primary hover:theme-text-secondary'}`}
+                      className={`w-full text-left px-3 py-2 rounded flex items-center ${metric === 'conversion' ? (darkMode ? 'bg-cyan-500 text-gray-900' : 'bg-cyan-500 text-white') : 'theme-text-primary hover:theme-text-secondary'}`}
                     >
                       Conversion Rate
                     </button>
@@ -678,7 +679,7 @@ export default function Leaderboard() {
               </div>
               <input 
                 type="text" 
-                className="pl-10 pr-4 py-2 theme-bg-tertiary theme-text-primary border theme-border-primary rounded-lg focus:outline-none focus:ring-2 ring-amber-500/20"
+                className="pl-10 pr-4 py-2 theme-bg-tertiary theme-text-primary border theme-border-primary rounded-lg focus:outline-none focus:ring-2 ring-cyan-500/20"
                 placeholder="Search by name..." 
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}

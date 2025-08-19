@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from "react";
 import MessagesButton from "@/components/MessagesButton";
-
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/contexts/AuthContext";
 import { BarChart3, Users, LogOut, Home, Map, Search, Plus, Filter, ZoomIn, ZoomOut, Layers, X, PenTool, Save } from "lucide-react";
@@ -10,7 +9,10 @@ import AmbientLogo from "@/components/AmbientLogo";
 import Script from 'next/script';
 import Sidebar from "@/components/Sidebar";
 import { useTheme } from "@/lib/hooks/useTheme";
-import ClientOnly from "@/components/ClientOnly";
+import dynamic from 'next/dynamic';
+
+// Dynamically import heavy components
+const ClientOnly = dynamic(() => import('@/components/ClientOnly'), { ssr: false });
 
 // Remove the modified declaration and revert to original
 declare global {
@@ -96,7 +98,10 @@ export default function Canvassing() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [isMapInitialized, setIsMapInitialized] = useState(false);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const [isClient, setIsClient] = useState(false);
+  const [areasSidebarOpen, setAreasSidebarOpen] = useState(false);
   const mapRef = useRef<google.maps.Map | null>(null);
   const polygonsRef = useRef<google.maps.Polygon[]>([]);
   const markersRef = useRef<google.maps.Marker[]>([]);
@@ -114,7 +119,8 @@ export default function Canvassing() {
   const [showPinSuccess, setShowPinSuccess] = useState(false);
   const [lastPinPosition, setLastPinPosition] = useState<{lat: number, lng: number} | null>(null);
 
-  const { user, loading, signOut, userData } = useAuth();
+  const auth = useAuth();
+  const { user, loading, signOut, userData } = auth || {};
   const router = useRouter();
 
   // Set isClient to true after component mounts
@@ -127,6 +133,30 @@ export default function Canvassing() {
     if (!userData) return false;
     const ud = userData as ExtendedUserData;
     return ud.role === 'admin' || ud.userRole === 'Self Gen';
+  };
+
+  // Swipe gesture handlers for mobile sidebar
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > 50;
+    
+    if (isLeftSwipe && areasSidebarOpen) {
+      setAreasSidebarOpen(false);
+    }
+    
+    setTouchStart(null);
+    setTouchEnd(null);
   };
 
   // Function to refresh areas data - improved to handle empty data case
@@ -1028,7 +1058,7 @@ export default function Canvassing() {
         }
       }, 300);
     }
-  }, [sidebarOpen, isClient, isMapInitialized]);
+  }, [sidebarOpen, areasSidebarOpen, isClient, isMapInitialized]);
 
   // Add effect to re-initialize map if the map container becomes visible
   useEffect(() => {
@@ -1055,7 +1085,7 @@ export default function Canvassing() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen theme-bg-primary">
-        <div className={`animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 ${darkMode ? 'border-amber-500' : 'border-blue-500'}`}></div>
+        <div className={`animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 ${darkMode ? 'border-cyan-500' : 'border-cyan-500'}`}></div>
       </div>
     );
   }
@@ -1075,7 +1105,7 @@ export default function Canvassing() {
     <>
       <Script
         src={`https://maps.googleapis.com/maps/api/js?key=AIzaSyADMRuoIRl1-6edk8emkrZMLnp3-Ecf8A4&libraries=places,drawing,geometry&callback=Function.prototype`}
-        strategy="afterInteractive"
+        strategy="lazyOnload"
         onLoad={() => {
           console.log("Google Maps script loaded");
           setMapLoaded(true);
@@ -1168,20 +1198,39 @@ export default function Canvassing() {
                     {isDrawingMode ? 'Exit Drawing' : 'Draw Area'}
                   </button>
                 )}
+
+                {/* Mobile Areas Toggle Button */}
+                <button 
+                  className="lg:hidden ml-3 flex items-center px-4 py-2 rounded-lg theme-bg-tertiary theme-text-primary hover:opacity-80 transition-colors"
+                  onClick={() => setAreasSidebarOpen(!areasSidebarOpen)}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                  </svg>
+                  {areasSidebarOpen ? 'Hide' : 'Areas'}
+                </button>
               </div>
             </header>
+
+            {/* Mobile Backdrop Overlay */}
+            {areasSidebarOpen && (
+              <div 
+                className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-30"
+                onClick={() => setAreasSidebarOpen(false)}
+              />
+            )}
 
             {/* Map and Areas */}
             <div className="flex h-[calc(100%-81px)]">
               {/* Map */}
-              <div className="flex-1 relative">
+              <div className={`${!sidebarOpen && !areasSidebarOpen ? 'w-full' : 'flex-1'} relative map-container-transition`}>
                 <div id="map" className={`w-full h-full ${isPinningMode ? 'cursor-crosshair' : 'cursor-grab'}`}></div>
                 
                 {/* Map loading indicator - updated condition */}
                 {(!isMapInitialized && mapLoaded) && (
                   <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
                     <div className="text-white text-center">
-                      <div className={`animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 ${darkMode ? 'border-amber-500' : 'border-blue-500'} mx-auto mb-4`}></div>
+                      <div className={`animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 ${darkMode ? 'border-cyan-500' : 'border-cyan-500'} mx-auto mb-4`}></div>
                       <p>Loading map...</p>
                       <button 
                         onClick={initializeMap}
@@ -1195,7 +1244,7 @@ export default function Canvassing() {
                 
                 {/* Pinning mode indicator */}
                 {isPinningMode && (
-                  <div className={`absolute top-20 left-1/2 transform -translate-x-1/2 ${darkMode ? 'bg-gradient-to-r from-amber-500 to-amber-600' : 'bg-gradient-to-r from-blue-500 to-blue-600'} text-white px-6 py-3 rounded-lg shadow-xl flex items-center animate-pulse z-10`}>
+                  <div className={`absolute top-20 left-1/2 transform -translate-x-1/2 ${darkMode ? 'bg-gradient-to-r from-cyan-500 to-cyan-600' : 'bg-gradient-to-r from-cyan-500 to-cyan-600'} text-white px-6 py-3 rounded-lg shadow-xl flex items-center animate-pulse z-10`}>
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -1206,7 +1255,7 @@ export default function Canvassing() {
                 
                 {/* Drawing mode indicator */}
                 {isDrawingMode && (
-                  <div className={`absolute top-20 left-1/2 transform -translate-x-1/2 ${darkMode ? 'bg-gradient-to-r from-amber-500 to-amber-600' : 'bg-gradient-to-r from-blue-500 to-blue-600'} text-white px-6 py-3 rounded-lg shadow-xl flex items-center animate-pulse-slow`}>
+                  <div className={`absolute top-20 left-1/2 transform -translate-x-1/2 ${darkMode ? 'bg-gradient-to-r from-cyan-500 to-cyan-600' : 'bg-gradient-to-r from-cyan-500 to-cyan-600'} text-white px-6 py-3 rounded-lg shadow-xl flex items-center animate-pulse-slow`}>
                     <PenTool className="h-5 w-5 mr-2" />
                     Draw a polygon on the map to create a new area
                   </div>
@@ -1216,7 +1265,7 @@ export default function Canvassing() {
                 <div className="absolute top-4 right-4 bg-white rounded-lg shadow-lg overflow-hidden">
                   <button 
                     onClick={toggleMapType}
-                    className={`px-3 py-2 flex items-center text-sm font-medium ${darkMode ? 'text-amber-500' : 'text-blue-500'}`}
+                    className={`px-3 py-2 flex items-center text-sm font-medium ${darkMode ? 'text-cyan-500' : 'text-cyan-500'}`}
                   >
                     <Layers className="h-4 w-4 mr-1" />
                     {mapType === 'satellite' ? 'Show Street Map' : 'Show Satellite'}
@@ -1239,17 +1288,118 @@ export default function Canvassing() {
                     <ZoomOut className="h-5 w-5" />
                   </button>
                 </div>
+
+                {/* Floating Pin Homes Button - Mobile Only */}
+                <div className="lg:hidden absolute bottom-20 left-4">
+                  <button 
+                    className={`floating-button flex items-center px-4 py-3 rounded-full shadow-lg ${
+                      isPinningMode 
+                        ? (darkMode 
+                            ? 'bg-amber-500 text-white shadow-amber-500/50 ring-2 ring-amber-500 scale-105' 
+                            : 'bg-blue-500 text-white shadow-blue-500/50 ring-2 ring-blue-500 scale-105')
+                        : 'bg-white text-gray-700 hover:bg-gray-50 shadow-gray-500/30'
+                    }`}
+                    onClick={togglePinningMode}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 ${isPinningMode ? 'animate-pulse' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span className="ml-2 text-sm font-medium">
+                      {isPinningMode ? 'Exit' : 'Pin'}
+                    </span>
+                  </button>
+                </div>
+
+                {/* Floating Areas Toggle Button - Mobile Only (when sidebar is hidden) */}
+                {!areasSidebarOpen && (
+                  <div className="lg:hidden absolute top-20 right-4">
+                    <button 
+                      className="floating-button flex items-center px-4 py-3 rounded-full bg-white text-gray-700 hover:bg-gray-50 shadow-lg shadow-gray-500/30"
+                      onClick={() => setAreasSidebarOpen(true)}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                      </svg>
+                      <span className="ml-2 text-sm font-medium">Areas</span>
+                    </button>
+                  </div>
+                )}
+
+                {/* Floating Areas Toggle Button - Desktop Only (when sidebar is hidden) */}
+                {!areasSidebarOpen && (
+                  <div className="hidden lg:block absolute top-20 right-4">
+                    <button 
+                      className="floating-button flex items-center px-4 py-3 rounded-full bg-white text-gray-700 hover:bg-gray-50 shadow-lg shadow-gray-500/30"
+                      onClick={() => setAreasSidebarOpen(true)}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                      </svg>
+                      <span className="ml-2 text-sm font-medium">Show Areas</span>
+                    </button>
+                  </div>
+                )}
+
+                {/* Floating Main Sidebar Toggle Button - Mobile Only (when sidebar is hidden) */}
+                {!sidebarOpen && (
+                  <div className="lg:hidden absolute top-20 left-4">
+                    <button 
+                      className="floating-button flex items-center px-4 py-3 rounded-full bg-white text-gray-700 hover:bg-gray-50 shadow-lg shadow-gray-500/30"
+                      onClick={() => setSidebarOpen(true)}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
+                      </svg>
+                      <span className="ml-2 text-sm font-medium">Menu</span>
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Areas sidebar */}
-              <div className="w-80 theme-bg-tertiary p-4 overflow-y-auto shadow-xl border-l theme-border-primary">
+              <div 
+                className={`${areasSidebarOpen ? 'translate-x-0' : '-translate-x-full'} ${areasSidebarOpen ? 'lg:translate-x-0' : 'lg:-translate-x-full'} fixed lg:relative top-0 right-0 h-full w-80 lg:w-80 theme-bg-tertiary p-4 overflow-y-auto shadow-xl border-l theme-border-primary z-40 sidebar-transition`}
+                onTouchStart={onTouchStart}
+                onTouchMove={onTouchMove}
+                onTouchEnd={onTouchEnd}
+              >
+                {/* Desktop Close Button */}
+                <div className="hidden lg:flex justify-between items-center mb-4">
+                  <h2 className="text-lg font-semibold theme-text-primary">Your Areas</h2>
+                  <button 
+                    onClick={() => setAreasSidebarOpen(false)}
+                    className="p-2 rounded-lg theme-bg-quaternary theme-text-secondary hover:theme-text-primary transition-colors"
+                    aria-label="Hide areas panel"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+
+                {/* Mobile Close Button */}
+                <div className="lg:hidden flex justify-between items-center mb-4">
+                  <h2 className="text-lg font-semibold theme-text-primary">Your Areas</h2>
+                  <button 
+                    onClick={() => setAreasSidebarOpen(false)}
+                    className="p-2 rounded-lg theme-bg-quaternary theme-text-secondary hover:theme-text-primary transition-colors"
+                    aria-label="Close areas panel"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+
+                {/* Mobile Swipe Indicator */}
+                <div className="lg:hidden flex justify-center mb-2">
+                  <div className="w-12 h-1 bg-gray-400 rounded-full opacity-50"></div>
+                </div>
+
                 {/* Search and buttons */}
                 <div className="flex items-center mb-6 gap-2">
                   <div className="relative flex-1">
                     <input
                       type="text"
                       placeholder="Search areas..."
-                      className="p-3 pl-10 w-full theme-bg-quaternary border theme-border-primary rounded-xl theme-text-primary focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all duration-200"
+                      className="p-3 pl-10 w-full theme-bg-quaternary border theme-border-primary rounded-xl theme-text-primary focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all duration-200 text-sm sm:text-base"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                     />
@@ -1264,13 +1414,13 @@ export default function Canvassing() {
                 </div>
 
                 {/* Areas list */}
-                <h2 className="text-lg font-semibold theme-text-primary mb-3 pl-1">Your Areas</h2>
+                <h2 className="hidden lg:block text-lg font-semibold theme-text-primary mb-3 pl-1">Your Areas</h2>
                 <div className="space-y-3">
                   {filteredAreas.length > 0 ? (
                     filteredAreas.map((area) => (
                       <div 
                         key={area.id} 
-                        className={`p-4 rounded-xl cursor-pointer transition-all duration-200 ${
+                        className={`p-3 sm:p-4 rounded-xl cursor-pointer transition-all duration-200 ${
                           selectedArea?.id === area.id 
                             ? `theme-bg-quaternary border-l-4 ${darkMode ? 'border-amber-500' : 'border-blue-500'} shadow-lg` 
                             : 'theme-bg-tertiary hover:theme-bg-quaternary border-l-4 border-transparent'
@@ -1282,9 +1432,9 @@ export default function Canvassing() {
                             className="w-4 h-4 rounded-full mr-3 ring-2 ring-white/20"
                             style={{ backgroundColor: area.color }}
                           ></div>
-                          <h3 className="font-medium theme-text-primary">{area.name}</h3>
+                          <h3 className="font-medium theme-text-primary text-sm sm:text-base">{area.name}</h3>
                         </div>
-                        <p className="text-sm theme-text-secondary mt-2 ml-7">{area.description}</p>
+                        <p className="text-xs sm:text-sm theme-text-secondary mt-2 ml-7">{area.description}</p>
                       </div>
                     ))
                   ) : (

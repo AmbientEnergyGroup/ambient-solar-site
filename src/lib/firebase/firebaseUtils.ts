@@ -26,11 +26,15 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 // User data interface
 export interface UserData {
   id: string;
-  role: 'admin' | 'setter' | 'closer' | 'manager';
+  role: 'admin' | 'setter' | 'closer' | 'manager' | 'region_admin' | 'office_admin' | 'owner_admin';
   displayName: string;
   email: string;
   phoneNumber?: string;
+  team?: 'Team A' | 'Team B' | 'Team C' | 'Team D';
+  region?: 'Region A' | 'Region B' | 'Region C' | 'Region D';
+  payType?: 'Rookie' | 'Vet' | 'Pro';
   createdAt: string;
+  updatedAt?: string;
   managerId?: string;
   active: boolean;
   dealCount: number;
@@ -107,13 +111,16 @@ export const signInWithGoogle = async () => {
 };
 
 // User data management
-export const createUserData = async (user: User, role: 'admin' | 'setter' | 'closer' | 'manager' = 'setter') => {
+export const createUserData = async (user: User, role: 'admin' | 'setter' | 'closer' | 'manager' | 'region_admin' | 'office_admin' | 'owner_admin' = 'setter') => {
   const userData: UserData = {
     id: user.uid,
     role,
     displayName: user.displayName || user.email?.split('@')[0] || 'User',
     email: user.email || '',
     phoneNumber: user.phoneNumber || undefined,
+    team: 'Team A',
+    region: 'Region A',
+    payType: 'Rookie',
     createdAt: new Date().toISOString(),
     active: true,
     dealCount: 0,
@@ -149,8 +156,23 @@ export const getUserData = async (userId: string): Promise<UserData | null> => {
 export const updateUserData = async (userId: string, updates: Partial<UserData>) => {
   try {
     const docRef = doc(db, 'users', userId);
+    
+    // Recursively filter out undefined values before sending to Firestore
+    const cleanUpdates = Object.fromEntries(
+      Object.entries(updates).filter(([_, value]) => {
+        if (value === undefined) return false;
+        if (typeof value === 'object' && value !== null) {
+          // Check if any nested values are undefined
+          return !Object.values(value).some(v => v === undefined);
+        }
+        return true;
+      })
+    );
+    
+    console.log('Clean updates being sent to Firestore:', cleanUpdates);
+    
     await updateDoc(docRef, {
-      ...updates,
+      ...cleanUpdates,
       updatedAt: new Date().toISOString()
     });
   } catch (error) {
@@ -312,12 +334,171 @@ export const getAllUsers = async (): Promise<UserData[]> => {
   }
 };
 
-export const updateUserRole = async (userId: string, role: 'admin' | 'setter' | 'closer' | 'manager') => {
+export const updateUserRole = async (userId: string, role: 'admin' | 'setter' | 'closer' | 'manager' | 'region_admin' | 'office_admin' | 'owner_admin') => {
   await updateUserData(userId, { role });
 };
 
 export const updateUserActive = async (userId: string, active: boolean) => {
   await updateUserData(userId, { active });
+};
+
+// Region and Team-based data access functions
+export const getUsersByRegion = async (region: string): Promise<UserData[]> => {
+  try {
+    const q = query(
+      collection(db, 'users'),
+      where('region', '==', region),
+      where('active', '==', true)
+    );
+    
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    })) as UserData[];
+  } catch (error) {
+    console.error("Error getting users by region:", error);
+    return [];
+  }
+};
+
+export const getClosersByRegion = async (region: string): Promise<UserData[]> => {
+  try {
+    const q = query(
+      collection(db, 'users'),
+      where('region', '==', region),
+      where('role', '==', 'closer'),
+      where('active', '==', true)
+    );
+    
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    })) as UserData[];
+  } catch (error) {
+    console.error("Error getting closers by region:", error);
+    return [];
+  }
+};
+
+export const getUsersByTeam = async (team: string): Promise<UserData[]> => {
+  try {
+    const q = query(
+      collection(db, 'users'),
+      where('team', '==', team),
+      where('active', '==', true)
+    );
+    
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    })) as UserData[];
+  } catch (error) {
+    console.error("Error getting users by team:", error);
+    return [];
+  }
+};
+
+export const getProjectsByRegion = async (region: string): Promise<Project[]> => {
+  try {
+    // First get all users in the region
+    const regionUsers = await getUsersByRegion(region);
+    const userIds = regionUsers.map(user => user.id);
+    
+    if (userIds.length === 0) return [];
+    
+    // Get all projects for users in this region
+    const q = query(
+      collection(db, 'projects'),
+      where('userId', 'in', userIds)
+    );
+    
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    })) as Project[];
+  } catch (error) {
+    console.error("Error getting projects by region:", error);
+    return [];
+  }
+};
+
+export const getCustomerSetsByRegion = async (region: string): Promise<CustomerSet[]> => {
+  try {
+    // First get all users in the region
+    const regionUsers = await getUsersByRegion(region);
+    const userIds = regionUsers.map(user => user.id);
+    
+    if (userIds.length === 0) return [];
+    
+    // Get all customer sets for users in this region
+    const q = query(
+      collection(db, 'customerSets'),
+      where('userId', 'in', userIds)
+    );
+    
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    })) as CustomerSet[];
+  } catch (error) {
+    console.error("Error getting customer sets by region:", error);
+    return [];
+  }
+};
+
+export const getProjectsByTeam = async (team: string): Promise<Project[]> => {
+  try {
+    // First get all users in the team
+    const teamUsers = await getUsersByTeam(team);
+    const userIds = teamUsers.map(user => user.id);
+    
+    if (userIds.length === 0) return [];
+    
+    // Get all projects for users in this team
+    const q = query(
+      collection(db, 'projects'),
+      where('userId', 'in', userIds)
+    );
+    
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    })) as Project[];
+  } catch (error) {
+    console.error("Error getting projects by team:", error);
+    return [];
+  }
+};
+
+export const getCustomerSetsByTeam = async (team: string): Promise<CustomerSet[]> => {
+  try {
+    // First get all users in the team
+    const teamUsers = await getUsersByTeam(team);
+    const userIds = teamUsers.map(user => user.id);
+    
+    if (userIds.length === 0) return [];
+    
+    // Get all customer sets for users in this team
+    const q = query(
+      collection(db, 'customerSets'),
+      where('userId', 'in', userIds)
+    );
+    
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    })) as CustomerSet[];
+  } catch (error) {
+    console.error("Error getting customer sets by team:", error);
+    return [];
+  }
 };
 
 // Legacy functions for backward compatibility
@@ -343,4 +524,184 @@ export const uploadFile = async (file: File, path: string) => {
   const storageRef = ref(storage, path);
   await uploadBytes(storageRef, file);
   return getDownloadURL(storageRef);
+};
+
+// Data Protection and Backup Functions
+export const backupUserData = async (userId: string): Promise<void> => {
+  try {
+    const userData = await getUserData(userId);
+    if (userData) {
+      // Create backup in a separate collection
+      await setDoc(doc(db, 'userBackups', `${userId}_${Date.now()}`), {
+        ...userData,
+        backupCreatedAt: new Date().toISOString(),
+        originalUserId: userId
+      });
+      console.log(`Backup created for user ${userId}`);
+    }
+  } catch (error) {
+    console.error('Error creating user backup:', error);
+  }
+};
+
+export const backupAllData = async (): Promise<void> => {
+  try {
+    const users = await getAllUsers();
+    const projects = await getDocs(collection(db, 'projects'));
+    const customerSets = await getDocs(collection(db, 'customerSets'));
+    
+    const backupData = {
+      users: users,
+      projects: projects.docs.map(doc => ({ id: doc.id, ...doc.data() })),
+      customerSets: customerSets.docs.map(doc => ({ id: doc.id, ...doc.data() })),
+      backupCreatedAt: new Date().toISOString(),
+      backupVersion: '1.0'
+    };
+    
+    await setDoc(doc(db, 'systemBackups', `backup_${Date.now()}`), backupData);
+    console.log('System backup created successfully');
+  } catch (error) {
+    console.error('Error creating system backup:', error);
+  }
+};
+
+export const restoreUserData = async (userId: string, backupId: string): Promise<void> => {
+  try {
+    const backupDoc = await getDoc(doc(db, 'userBackups', backupId));
+    if (backupDoc.exists()) {
+      const backupData = backupDoc.data();
+      await setDoc(doc(db, 'users', userId), backupData);
+      console.log(`User data restored for ${userId}`);
+    }
+  } catch (error) {
+    console.error('Error restoring user data:', error);
+  }
+};
+
+export const getDataIntegrityCheck = async (): Promise<{
+  users: number;
+  projects: number;
+  customerSets: number;
+  lastBackup: string | null;
+  integrityScore: number;
+}> => {
+  try {
+    const users = await getAllUsers();
+    const projects = await getDocs(collection(db, 'projects'));
+    const customerSets = await getDocs(collection(db, 'customerSets'));
+    
+    // Get latest backup
+    const backups = await getDocs(collection(db, 'systemBackups'));
+    const latestBackup = backups.docs.length > 0 
+      ? backups.docs[backups.docs.length - 1].data().backupCreatedAt 
+      : null;
+    
+    const integrityScore = Math.min(100, (users.length + projects.docs.length + customerSets.docs.length) / 10);
+    
+    return {
+      users: users.length,
+      projects: projects.docs.length,
+      customerSets: customerSets.docs.length,
+      lastBackup: latestBackup,
+      integrityScore
+    };
+  } catch (error) {
+    console.error('Error checking data integrity:', error);
+    return {
+      users: 0,
+      projects: 0,
+      customerSets: 0,
+      lastBackup: null,
+      integrityScore: 0
+    };
+  }
+};
+
+// Enhanced update functions with automatic backups
+export const updateUserDataWithBackup = async (userId: string, updates: Partial<UserData>): Promise<void> => {
+  try {
+    // Create backup before update
+    await backupUserData(userId);
+    
+    // Perform the update
+    await updateUserData(userId, updates);
+    
+    console.log(`User data updated with backup for ${userId}`);
+  } catch (error) {
+    console.error('Error updating user data with backup:', error);
+    throw error;
+  }
+};
+
+export const createProjectWithBackup = async (projectData: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>): Promise<Project> => {
+  try {
+    // Create backup before adding project
+    await backupUserData(projectData.userId);
+    
+    // Create the project
+    const project = await createProject(projectData);
+    
+    console.log(`Project created with backup for user ${projectData.userId}`);
+    return project;
+  } catch (error) {
+    console.error('Error creating project with backup:', error);
+    throw error;
+  }
+};
+
+export const updateProjectWithBackup = async (projectId: string, updates: Partial<Project>): Promise<void> => {
+  try {
+    // Get project to find userId
+    const projectDoc = await getDoc(doc(db, 'projects', projectId));
+    if (projectDoc.exists()) {
+      const projectData = projectDoc.data() as Project;
+      await backupUserData(projectData.userId);
+    }
+    
+    // Perform the update
+    await updateProject(projectId, updates);
+    
+    console.log(`Project updated with backup for project ${projectId}`);
+  } catch (error) {
+    console.error('Error updating project with backup:', error);
+    throw error;
+  }
+};
+
+// Data migration and version control
+export const migrateUserData = async (userId: string): Promise<void> => {
+  try {
+    const userData = await getUserData(userId);
+    if (userData) {
+      // Ensure all required fields exist
+      const migratedData: UserData = {
+        ...userData,
+        team: userData.team || 'Team A',
+        region: userData.region || 'Region A',
+        settings: {
+          notifications: userData.settings?.notifications ?? true,
+          theme: userData.settings?.theme || 'auto',
+          language: userData.settings?.language || 'en'
+        },
+        updatedAt: new Date().toISOString()
+      };
+      
+      await setDoc(doc(db, 'users', userId), migratedData);
+      console.log(`User data migrated for ${userId}`);
+    }
+  } catch (error) {
+    console.error('Error migrating user data:', error);
+  }
+};
+
+export const migrateAllUsers = async (): Promise<void> => {
+  try {
+    const users = await getAllUsers();
+    for (const user of users) {
+      await migrateUserData(user.id);
+    }
+    console.log(`Migrated ${users.length} users`);
+  } catch (error) {
+    console.error('Error migrating all users:', error);
+  }
 };

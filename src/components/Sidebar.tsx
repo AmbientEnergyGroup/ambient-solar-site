@@ -15,9 +15,20 @@ interface SidebarProps {
 
 export default function Sidebar({ signOut, darkMode, sidebarOpen, setSidebarOpen }: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const [showDevCodeInput, setShowDevCodeInput] = useState(false);
   const [devCode, setDevCode] = useState("");
   const [devModeActive, setDevModeActive] = useState(false);
+  
+  // Simple prefetch for faster navigation
+  useEffect(() => {
+    if (sidebarOpen) {
+      const routes = ['/dashboard', '/canvassing', '/messages', '/sets', '/projects', '/team'];
+      routes.forEach(route => {
+        router.prefetch(route);
+      });
+    }
+  }, [router, sidebarOpen]);
   
   // Handle developer code input
   const handleDevCodeSubmit = () => {
@@ -30,7 +41,7 @@ export default function Sidebar({ signOut, darkMode, sidebarOpen, setSidebarOpen
   };
   
   return (
-    <div className={`${sidebarOpen ? 'w-64' : 'w-0'} theme-bg-tertiary shadow-md transition-all duration-300 overflow-hidden flex flex-col h-full`}>
+    <div className={`${sidebarOpen ? 'w-64' : 'w-0'} theme-bg-tertiary shadow-md transition-all duration-300 overflow-hidden flex flex-col h-full z-50`}>
       <div className="p-4 border-b theme-border-secondary flex-shrink-0">
         {sidebarOpen ? (
           <div className="flex items-center">

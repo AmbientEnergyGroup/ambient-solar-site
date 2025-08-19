@@ -20,7 +20,8 @@ function SignupContent() {
   const inviteId = searchParams.get('inviteId');
   const oobCode = searchParams.get('oobCode');
   const router = useRouter();
-  const { signUpWithEmail, user, signOut, signInWithLink } = useAuth();
+  const auth = useAuth();
+  const { signUpWithEmail, user, signOut, signInWithLink } = auth || {};
 
   // Check if this is a Firebase email link or invitation
   useEffect(() => {
@@ -166,7 +167,7 @@ function SignupContent() {
         <div className="flex-1 flex flex-col items-center justify-center w-full max-w-md px-6 relative z-10">
           <div className="w-full bg-gray-600 p-8 rounded-lg shadow-lg text-white">
             <div className="text-center py-8">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto text-amber-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto text-cyan-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
               <h2 className="text-2xl font-bold text-white mb-6">Already Logged In</h2>
@@ -178,7 +179,7 @@ function SignupContent() {
               <div className="flex flex-col gap-3">
                 <button
                   onClick={handleSignOut}
-                  className="w-full bg-amber-500 hover:bg-amber-600 text-white font-medium py-3 px-4 rounded-lg transition"
+                  className="w-full bg-cyan-500 hover:bg-cyan-600 text-white font-medium py-3 px-4 rounded-lg transition"
                 >
                   Sign Out
                 </button>
@@ -199,7 +200,7 @@ function SignupContent() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-700">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyan-500"></div>
       </div>
     );
   }
@@ -238,7 +239,7 @@ function SignupContent() {
               <div className="flex flex-col gap-3">
                 <button
                   onClick={() => router.push('/')}
-                  className="w-full bg-amber-500 hover:bg-amber-600 text-white font-medium py-3 px-4 rounded-lg transition"
+                  className="w-full bg-cyan-500 hover:bg-cyan-600 text-white font-medium py-3 px-4 rounded-lg transition"
                 >
                   Go to Login
                 </button>
@@ -270,7 +271,7 @@ function SignupContent() {
               <p className="text-gray-300 mb-6">{error}</p>
               <button
                 onClick={() => router.push('/')}
-                className="px-6 py-2 bg-amber-500 text-white rounded-full hover:bg-amber-600 transition"
+                className="px-6 py-2 bg-cyan-500 text-white rounded-full hover:bg-cyan-600 transition"
               >
                 Return to Login
               </button>
@@ -290,7 +291,7 @@ function SignupContent() {
       <div className="flex-1 flex flex-col items-center justify-center w-full max-w-md px-6 relative z-10">
         <div className="w-full bg-gray-600 p-8 rounded-lg shadow-lg text-white">
           <div className="flex items-center justify-center mb-6">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-amber-500 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-cyan-500 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 19v-8.93a2 2 0 01.89-1.664l7-4.666a2 2 0 012.22 0l7 4.666A2 2 0 0121 10.07V19M3 19a2 2 0 002 2h14a2 2 0 002-2M3 19l6.75-4.5M21 19l-6.75-4.5M3 10l6.75 4.5M21 10l-6.75 4.5m0 0l-1.14.76a2 2 0 01-2.22 0l-1.14-.76" />
             </svg>
             <h2 className="text-2xl font-bold text-white text-center">
@@ -301,11 +302,11 @@ function SignupContent() {
           <div className="mb-6 p-4 bg-gray-800 rounded-lg border border-gray-700">
             {oobCode ? (
               <p className="text-gray-300 text-sm">
-                Complete your login to <span className="font-semibold text-amber-500">Ambient Pro</span>. Enter the email address you used to request the login link.
+                Complete your login to <span className="font-semibold text-cyan-500">Ambient Pro</span>. Enter the email address you used to request the login link.
               </p>
             ) : (
               <p className="text-gray-300 text-sm">
-                You've been invited to join <span className="font-semibold text-amber-500">Ambient Pro</span>. Complete the form below to create your account.
+                You've been invited to join <span className="font-semibold text-cyan-500">Ambient Pro</span>. Complete the form below to create your account.
               </p>
             )}
             {inviteData && inviteData.email && (
@@ -330,7 +331,7 @@ function SignupContent() {
                 <label className="block text-sm font-medium text-gray-300 mb-1">Email</label>
                 <input
                   type="email"
-                  className="w-full p-3 border border-gray-600 rounded focus:outline-none focus:border-amber-500 bg-gray-800 text-white disabled:opacity-75"
+                  className="w-full p-3 border border-gray-600 rounded focus:outline-none focus:border-cyan-500 bg-gray-800 text-white disabled:opacity-75"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={!!inviteData} // Email comes from invitation and can't be changed
@@ -340,7 +341,7 @@ function SignupContent() {
                   <p className="text-xs text-gray-400 mt-1">Email from invitation cannot be changed</p>
                 )}
                 {oobCode && (
-                  <p className="text-xs text-amber-400 mt-1">Enter the email address you used to request the login link</p>
+                  <p className="text-xs text-cyan-400 mt-1">Enter the email address you used to request the login link</p>
                 )}
               </div>
               
@@ -350,7 +351,7 @@ function SignupContent() {
                     <label className="block text-sm font-medium text-gray-300 mb-1">Display Name</label>
                     <input
                       type="text"
-                      className="w-full p-3 border border-gray-600 rounded focus:outline-none focus:border-amber-500 bg-gray-800 text-white"
+                      className="w-full p-3 border border-gray-600 rounded focus:outline-none focus:border-cyan-500 bg-gray-800 text-white"
                       value={displayName}
                       onChange={(e) => setDisplayName(e.target.value)}
                       required
@@ -361,7 +362,7 @@ function SignupContent() {
                     <label className="block text-sm font-medium text-gray-300 mb-1">Password</label>
                     <input
                       type="password"
-                      className="w-full p-3 border border-gray-600 rounded focus:outline-none focus:border-amber-500 bg-gray-800 text-white"
+                      className="w-full p-3 border border-gray-600 rounded focus:outline-none focus:border-cyan-500 bg-gray-800 text-white"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       minLength={6}
@@ -374,7 +375,7 @@ function SignupContent() {
                     <label className="block text-sm font-medium text-gray-300 mb-1">Confirm Password</label>
                     <input
                       type="password"
-                      className="w-full p-3 border border-gray-600 rounded focus:outline-none focus:border-amber-500 bg-gray-800 text-white"
+                      className="w-full p-3 border border-gray-600 rounded focus:outline-none focus:border-cyan-500 bg-gray-800 text-white"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       minLength={6}
@@ -388,7 +389,7 @@ function SignupContent() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold py-3 px-4 rounded-full transition duration-200 mt-6 disabled:opacity-70"
+              className="w-full bg-cyan-500 hover:bg-cyan-600 text-white font-semibold py-3 px-4 rounded-full transition duration-200 mt-6 disabled:opacity-70"
             >
               {loading ? (
                 <div className="flex items-center justify-center">

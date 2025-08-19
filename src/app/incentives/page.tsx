@@ -82,7 +82,8 @@ export default function IncentivesPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   
-  const { user, loading, signOut } = useAuth();
+  const auth = useAuth();
+  const { user, loading, signOut } = auth || {};
   const router = useRouter();
   const { darkMode } = useTheme();
 
@@ -131,7 +132,7 @@ export default function IncentivesPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen theme-bg-primary">
-        <div className={`animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 ${darkMode ? 'border-amber-500' : 'border-blue-500'}`}></div>
+        <div className={`animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 ${darkMode ? 'border-cyan-500' : 'border-cyan-500'}`}></div>
       </div>
     );
   }
@@ -190,8 +191,8 @@ export default function IncentivesPage() {
               {/* Available Incentives Card */}
               <div className="theme-bg-tertiary rounded-lg shadow p-6 border theme-border-primary">
                 <div className="flex items-center mb-3">
-                  <div className={`p-3 rounded-full ${darkMode ? 'bg-amber-500 bg-opacity-10' : 'bg-blue-500 bg-opacity-10'}`}>
-                    <Gift className={`h-6 w-6 ${darkMode ? 'text-amber-500' : 'text-blue-500'}`} />
+                  <div className={`p-3 rounded-full ${darkMode ? 'bg-cyan-500 bg-opacity-10' : 'bg-cyan-500 bg-opacity-10'}`}>
+                    <Gift className={`h-6 w-6 ${darkMode ? 'text-cyan-500' : 'text-cyan-500'}`} />
                   </div>
                   <div className="ml-4">
                     <h3 className="theme-text-secondary text-sm">Available Incentives</h3>
@@ -208,8 +209,8 @@ export default function IncentivesPage() {
               {/* Potential Earnings Card */}
               <div className="theme-bg-tertiary rounded-lg shadow p-6 border theme-border-primary">
                 <div className="flex items-center mb-3">
-                  <div className={`p-3 rounded-full ${darkMode ? 'bg-amber-500 bg-opacity-10' : 'bg-blue-500 bg-opacity-10'}`}>
-                    <TrendingUp className={`h-6 w-6 ${darkMode ? 'text-amber-500' : 'text-blue-500'}`} />
+                  <div className={`p-3 rounded-full ${darkMode ? 'bg-cyan-500 bg-opacity-10' : 'bg-cyan-500 bg-opacity-10'}`}>
+                    <TrendingUp className={`h-6 w-6 ${darkMode ? 'text-cyan-500' : 'text-cyan-500'}`} />
                   </div>
                   <div className="ml-4">
                     <h3 className="theme-text-secondary text-sm">Potential Earnings</h3>
@@ -226,8 +227,8 @@ export default function IncentivesPage() {
               {/* Earned Rewards Card */}
               <div className="theme-bg-tertiary rounded-lg shadow p-6 border theme-border-primary">
                 <div className="flex items-center mb-3">
-                  <div className={`p-3 rounded-full ${darkMode ? 'bg-amber-500 bg-opacity-10' : 'bg-blue-500 bg-opacity-10'}`}>
-                    <Award className={`h-6 w-6 ${darkMode ? 'text-amber-500' : 'text-blue-500'}`} />
+                  <div className={`p-3 rounded-full ${darkMode ? 'bg-cyan-500 bg-opacity-10' : 'bg-cyan-500 bg-opacity-10'}`}>
+                    <Award className={`h-6 w-6 ${darkMode ? 'text-cyan-500' : 'text-cyan-500'}`} />
                   </div>
                   <div className="ml-4">
                     <h3 className="theme-text-secondary text-sm">Earned Rewards</h3>
@@ -285,7 +286,7 @@ export default function IncentivesPage() {
                         <div className="flex justify-between items-start">
                           <h3 className="text-lg font-semibold theme-text-primary">{incentive.title}</h3>
                           <div className={`px-3 py-1 rounded-full text-xs font-medium ${
-                            incentive.category === 'sales' ? (darkMode ? 'bg-amber-500 bg-opacity-10 text-amber-500' : 'bg-blue-500 bg-opacity-10 text-blue-500') :
+                            incentive.category === 'sales' ? (darkMode ? 'bg-cyan-500 bg-opacity-10 text-cyan-500' : 'bg-cyan-500 bg-opacity-10 text-cyan-500') :
                             incentive.category === 'referral' ? 'bg-green-500 bg-opacity-10 text-green-500' :
                             incentive.category === 'documentation' ? 'bg-purple-500 bg-opacity-10 text-purple-500' :
                             incentive.category === 'reliability' ? 'bg-teal-500 bg-opacity-10 text-teal-500' :
@@ -314,7 +315,7 @@ export default function IncentivesPage() {
                           {incentive.goal && (
                             <div className="w-full h-2 theme-bg-quaternary rounded-full">
                               <div 
-                                className={`h-full rounded-full ${darkMode ? 'bg-amber-500' : 'bg-blue-500'}`} 
+                                className={`h-full rounded-full ${darkMode ? 'bg-cyan-500' : 'bg-cyan-500'}`} 
                                 style={{ width: `${Math.min(100, (incentive.progress / incentive.goal) * 100)}%` }}
                               ></div>
                             </div>
@@ -323,7 +324,7 @@ export default function IncentivesPage() {
                         
                         <div className="mt-4 pt-4 border-t theme-border-primary flex items-center justify-between">
                           <div className="theme-text-primary font-medium">Reward: {incentive.reward}</div>
-                          <button className={`flex items-center text-sm font-medium ${darkMode ? 'text-amber-500' : 'text-blue-500'}`}>
+                          <button className={`flex items-center text-sm font-medium ${darkMode ? 'text-cyan-500' : 'text-cyan-500'}`}>
                             View Details
                             <ChevronRight className="h-4 w-4 ml-1" />
                           </button>
@@ -355,8 +356,8 @@ export default function IncentivesPage() {
                       }`}
                     >
                       <div className="flex items-start">
-                        <div className={`p-2 rounded-full mr-4 ${darkMode ? 'bg-amber-500 bg-opacity-10' : 'bg-blue-500 bg-opacity-10'}`}>
-                          <CheckCircle2 className={`h-5 w-5 ${darkMode ? 'text-amber-500' : 'text-blue-500'}`} />
+                        <div className={`p-2 rounded-full mr-4 ${darkMode ? 'bg-cyan-500 bg-opacity-10' : 'bg-cyan-500 bg-opacity-10'}`}>
+                          <CheckCircle2 className={`h-5 w-5 ${darkMode ? 'text-cyan-500' : 'text-cyan-500'}`} />
                         </div>
                         <div>
                           <h3 className="font-medium theme-text-primary">{incentive.title}</h3>
@@ -364,7 +365,7 @@ export default function IncentivesPage() {
                           <div className="flex items-center mt-2">
                             <span className="text-xs theme-text-tertiary">Completed on {new Date(incentive.earnedDate).toLocaleDateString()}</span>
                             <span className={`ml-3 px-2 py-0.5 rounded-full text-xs ${
-                              incentive.category === 'sales' ? (darkMode ? 'bg-amber-500 bg-opacity-10 text-amber-500' : 'bg-blue-500 bg-opacity-10 text-blue-500') :
+                              incentive.category === 'sales' ? (darkMode ? 'bg-cyan-500 bg-opacity-10 text-cyan-500' : 'bg-cyan-500 bg-opacity-10 text-cyan-500') :
                               incentive.category === 'referral' ? 'bg-green-500 bg-opacity-10 text-green-500' :
                               incentive.category === 'documentation' ? 'bg-purple-500 bg-opacity-10 text-purple-500' :
                               incentive.category === 'reliability' ? 'bg-teal-500 bg-opacity-10 text-teal-500' :
@@ -377,7 +378,7 @@ export default function IncentivesPage() {
                       </div>
                       <div className="text-right">
                         <div className="font-medium theme-text-primary">{incentive.reward}</div>
-                        <button className={`text-sm ${darkMode ? 'text-amber-500' : 'text-blue-500'} mt-2 flex items-center justify-end w-full`}>
+                        <button className={`text-sm ${darkMode ? 'text-cyan-500' : 'text-cyan-500'} mt-2 flex items-center justify-end w-full`}>
                           Details
                           <ChevronRight className="h-4 w-4 ml-1" />
                         </button>

@@ -39,7 +39,8 @@ export default function HRPage() {
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const { darkMode, toggleTheme } = useTheme();
-  const { user, userData, loading, signOut } = useAuth();
+  const auth = useAuth();
+  const { user, userData, loading, signOut } = auth || {};
   const [commissionPayments, setCommissionPayments] = useState<CommissionPayment[]>([]);
   const [nextPayment, setNextPayment] = useState<CommissionPayment | null>(null);
   const [paymentHistory, setPaymentHistory] = useState<CommissionPayment[]>([]);
@@ -112,7 +113,7 @@ export default function HRPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen theme-bg-primary">
-        <div className={`animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 ${darkMode ? 'border-amber-500' : 'border-blue-500'}`}></div>
+        <div className={`animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 ${darkMode ? 'border-cyan-500' : 'border-cyan-500'}`}></div>
       </div>
     );
   }
@@ -218,7 +219,7 @@ export default function HRPage() {
             {/* Payment controls */}
             <div className="mb-6 flex items-center justify-end space-x-3">
               
-              <button className={`${darkMode ? 'bg-amber-500 hover:bg-amber-600' : 'bg-blue-500 hover:bg-blue-600'} px-4 py-2 rounded-md text-white font-medium flex items-center`}>
+              <button className={`${darkMode ? 'bg-cyan-500 hover:bg-cyan-600' : 'bg-cyan-500 hover:bg-cyan-600'} px-4 py-2 rounded-md text-white font-medium flex items-center`}>
                 <Download className="h-4 w-4 mr-2" />
                 Download PDF
               </button>
@@ -229,7 +230,7 @@ export default function HRPage() {
               <div className="p-6">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-xl font-semibold theme-text-primary">Next Payment</h2>
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${darkMode ? 'bg-amber-500 bg-opacity-10 text-amber-500' : 'bg-blue-500 bg-opacity-10 text-blue-500'}`}>
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${darkMode ? 'bg-cyan-500 bg-opacity-10 text-cyan-500' : 'bg-cyan-500 bg-opacity-10 text-cyan-500'}`}>
                     {nextPayment ? 'Pending' : 'No Pending Payments'}
                   </span>
                 </div>

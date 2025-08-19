@@ -72,7 +72,8 @@ export default function DeveloperConsole() {
   const [showInvitationSuccess, setShowInvitationSuccess] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
   
-  const { user, userData, loading, signOut, signUpWithEmail, updateUserRole, updateUserActive, isAdmin } = useAuth();
+  const auth = useAuth();
+  const { user, userData, loading, signOut, signUpWithEmail, updateUserRole, updateUserActive, isAdmin } = auth || {};
   const router = useRouter();
   const { darkMode } = useTheme();
 
@@ -393,7 +394,7 @@ export default function DeveloperConsole() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen theme-bg-primary">
-        <div className={`animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 ${darkMode ? 'border-amber-500' : 'border-blue-500'}`}></div>
+        <div className={`animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 ${darkMode ? 'border-cyan-500' : 'border-cyan-500'}`}></div>
       </div>
     );
   }
@@ -409,7 +410,7 @@ export default function DeveloperConsole() {
       <div className="flex items-center justify-center min-h-screen theme-bg-primary">
         <div className="theme-bg-tertiary p-8 rounded-xl shadow-2xl max-w-md w-full border theme-border-primary">
           <div className="flex items-center justify-center mb-6">
-            <Code className={`h-10 w-10 ${darkMode ? 'text-amber-500' : 'text-blue-500'} mr-3`} />
+            <Code className={`h-10 w-10 ${darkMode ? 'text-cyan-500' : 'text-cyan-500'} mr-3`} />
             <h1 className="text-2xl font-bold theme-text-primary">Developer Console</h1>
           </div>
           

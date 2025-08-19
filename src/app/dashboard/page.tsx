@@ -21,10 +21,11 @@ const safelyParseJSON = (key: string, defaultValue: any = []) => {
 };
 
 export default function Dashboard() {
-  const { user, loading, signOut, userData } = useAuth();
+  const auth = useAuth();
+  const { user, loading, signOut, userData } = auth || {};
   const router = useRouter();
   const { darkMode } = useTheme();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [headerVisible, setHeaderVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [dashboardStats, setDashboardStats] = useState({
@@ -236,7 +237,10 @@ export default function Dashboard() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen theme-bg-primary">
-        <div className={`animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 ${darkMode ? 'border-amber-500' : 'border-blue-500'}`}></div>
+        <div className="text-center">
+          <div className={`animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 ${darkMode ? 'border-cyan-500' : 'border-cyan-500'} mx-auto mb-4`}></div>
+          <p className="text-gray-500">Loading dashboard...</p>
+        </div>
       </div>
     );
   }
@@ -261,18 +265,18 @@ export default function Dashboard() {
         {/* Header with toggle button */}
         <header className={`standard-header fixed top-0 z-50 transition-all duration-300 ${
           headerVisible ? 'translate-y-0' : '-translate-y-full'
-        } ${sidebarOpen ? 'left-64' : 'left-0'} right-0`}>
+        } ${sidebarOpen ? 'left-64 lg:left-64 left-0' : 'left-0'} right-0`}>
           <div className="standard-header-content">
             <button 
               onClick={() => setSidebarOpen(!sidebarOpen)} 
               className="text-cyan-500 hover:text-cyan-600 transition-colors p-1"
             >
               {sidebarOpen ? (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 sm:h-8 sm:w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M4 6h16M4 12h16M4 18h7" />
                 </svg>
               ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 sm:h-8 sm:w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               )}
@@ -286,17 +290,17 @@ export default function Dashboard() {
             {/* Centered logo when sidebar is closed */}
             {!sidebarOpen && (
               <div className="header-logo-center">
-                <AmbientLogo theme={darkMode ? 'dark' : 'light'} size="xl" />
+                <AmbientLogo theme={darkMode ? 'dark' : 'light'} size="md" />
               </div>
             )}
           </div>
         </header>
 
         {/* Dashboard content */}
-        <main className="p-6 pt-24">
-          <div className="grid grid-cols-2 gap-6">
+        <main className="p-4 sm:p-6 pt-20 sm:pt-24">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             {/* Payday for upcoming week */}
-            <div className="bg-cyan-500 rounded-lg shadow p-8 row-span-2 flex flex-col justify-between h-[calc(100vh-8rem)] relative overflow-hidden">
+            <div className="bg-cyan-500 rounded-lg shadow p-4 sm:p-8 row-span-2 flex flex-col justify-between h-[calc(100vh-8rem)] relative overflow-hidden">
               {/* Watermark Pattern */}
               <div className="absolute inset-0 pointer-events-none select-none z-0">
                 {/* Row 1 */}

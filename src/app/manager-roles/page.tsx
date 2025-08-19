@@ -69,7 +69,8 @@ export default function ManagerRoles() {
   const [attachments, setAttachments] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { user, loading, signOut } = useAuth();
+  const auth = useAuth();
+  const { user, loading, signOut } = auth || {};
   const router = useRouter();
 
   // Apply theme when darkMode changes
@@ -370,7 +371,7 @@ export default function ManagerRoles() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen theme-bg-primary">
-        <div className={`animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 ${darkMode ? 'border-amber-500' : 'border-blue-500'}`}></div>
+        <div className={`animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 ${darkMode ? 'border-cyan-500' : 'border-cyan-500'}`}></div>
       </div>
     );
   }
@@ -387,7 +388,7 @@ export default function ManagerRoles() {
         <div className="p-4 border-b theme-border-secondary">
           <div className="flex items-center">
             <AmbientLogo theme={darkMode ? 'dark' : 'light'} />
-            <span className={`ml-2 text-xl font-bold ${darkMode ? 'text-amber-500' : 'text-blue-500'}`}>Pro</span>
+            <span className={`ml-2 text-xl font-bold ${darkMode ? 'text-cyan-500' : 'text-cyan-500'}`}>Pro</span>
           </div>
         </div>
         
@@ -540,7 +541,7 @@ export default function ManagerRoles() {
                 onClick={() => setFilterStatus('all')}
                 className={`px-3 py-1.5 rounded-lg text-sm ${
                   filterStatus === 'all' 
-                    ? (darkMode ? 'bg-amber-500 text-gray-900' : 'bg-blue-500 text-white')
+                    ? (darkMode ? 'bg-cyan-500 text-gray-900' : 'bg-cyan-500 text-white')
                     : 'theme-bg-quaternary theme-text-secondary'
                 }`}
               >
@@ -550,7 +551,7 @@ export default function ManagerRoles() {
                 onClick={() => setFilterStatus('pending')}
                 className={`px-3 py-1.5 rounded-lg text-sm ${
                   filterStatus === 'pending' 
-                    ? (darkMode ? 'bg-amber-500 text-gray-900' : 'bg-blue-500 text-white')
+                    ? (darkMode ? 'bg-cyan-500 text-gray-900' : 'bg-cyan-500 text-white')
                     : 'theme-bg-quaternary theme-text-secondary'
                 }`}
               >
@@ -561,7 +562,7 @@ export default function ManagerRoles() {
                   onClick={() => setFilterStatus('inprogress')}
                   className={`px-3 py-1.5 rounded-lg text-sm ${
                     filterStatus === 'inprogress' 
-                      ? (darkMode ? 'bg-amber-500 text-gray-900' : 'bg-blue-500 text-white')
+                      ? (darkMode ? 'bg-cyan-500 text-gray-900' : 'bg-cyan-500 text-white')
                       : 'theme-bg-quaternary theme-text-secondary'
                   }`}
                 >
@@ -574,7 +575,7 @@ export default function ManagerRoles() {
                     onClick={() => setFilterStatus('approved')}
                     className={`px-3 py-1.5 rounded-lg text-sm ${
                       filterStatus === 'approved' 
-                        ? (darkMode ? 'bg-amber-500 text-gray-900' : 'bg-blue-500 text-white')
+                        ? (darkMode ? 'bg-cyan-500 text-gray-900' : 'bg-cyan-500 text-white')
                         : 'theme-bg-quaternary theme-text-secondary'
                     }`}
                   >
@@ -584,7 +585,7 @@ export default function ManagerRoles() {
                     onClick={() => setFilterStatus('rejected')}
                     className={`px-3 py-1.5 rounded-lg text-sm ${
                       filterStatus === 'rejected' 
-                        ? (darkMode ? 'bg-amber-500 text-gray-900' : 'bg-blue-500 text-white')
+                        ? (darkMode ? 'bg-cyan-500 text-gray-900' : 'bg-cyan-500 text-white')
                         : 'theme-bg-quaternary theme-text-secondary'
                     }`}
                   >
@@ -596,7 +597,7 @@ export default function ManagerRoles() {
                   onClick={() => setFilterStatus('completed')}
                   className={`px-3 py-1.5 rounded-lg text-sm ${
                     filterStatus === 'completed' 
-                      ? (darkMode ? 'bg-amber-500 text-gray-900' : 'bg-blue-500 text-white')
+                      ? (darkMode ? 'bg-cyan-500 text-gray-900' : 'bg-cyan-500 text-white')
                       : 'theme-bg-quaternary theme-text-secondary'
                   }`}
                 >
@@ -614,7 +615,7 @@ export default function ManagerRoles() {
                   <div key={index} className="theme-bg-tertiary rounded-xl shadow-lg border theme-border-primary overflow-hidden">
                     <div className="px-6 py-4 flex justify-between items-center bg-gradient-to-r from-gray-750 to-gray-800 border-b theme-border-primary">
                       <div className="flex items-center gap-2">
-                        <UserPlus className={`h-5 w-5 ${darkMode ? 'text-amber-500' : 'text-blue-500'}`} />
+                        <UserPlus className={`h-5 w-5 ${darkMode ? 'text-cyan-500' : 'text-cyan-500'}`} />
                         <h3 className="text-lg font-medium theme-text-primary">{referral.referralName}</h3>
                       </div>
                       <div className="flex items-center gap-2">
@@ -682,7 +683,7 @@ export default function ManagerRoles() {
                 ))
               ) : (
                 <div className="theme-bg-tertiary rounded-xl shadow p-8 text-center">
-                  <UserPlus className={`h-10 w-10 mx-auto mb-3 ${darkMode ? 'text-amber-500/70' : 'text-blue-500/70'}`} />
+                  <UserPlus className={`h-10 w-10 mx-auto mb-3 ${darkMode ? 'text-cyan-500/70' : 'text-cyan-500/70'}`} />
                   <h3 className="text-xl font-bold theme-text-primary mb-2">No Referrals Found</h3>
                   <p className="theme-text-secondary">
                     {filterStatus === 'all' 
@@ -710,7 +711,7 @@ export default function ManagerRoles() {
                           todo.priority === 'High' ? (
                             <AlertCircle className="h-6 w-6 text-red-500" />
                           ) : (
-                            <ClipboardList className={`h-6 w-6 ${darkMode ? 'text-amber-500' : 'text-blue-500'}`} />
+                            <ClipboardList className={`h-6 w-6 ${darkMode ? 'text-cyan-500' : 'text-cyan-500'}`} />
                           )
                         )}
                         <div>
@@ -762,7 +763,7 @@ export default function ManagerRoles() {
                           )}
                           <button
                             onClick={() => updateTodoStatus(todo.id, 'Completed')}
-                            className={`px-3 py-1.5 text-sm rounded-lg text-white ${darkMode ? 'bg-amber-500 hover:bg-amber-600' : 'bg-blue-500 hover:bg-blue-600'} transition-colors`}
+                            className={`px-3 py-1.5 text-sm rounded-lg text-white ${darkMode ? 'bg-cyan-500 hover:bg-cyan-600' : 'bg-cyan-500 hover:bg-cyan-600'} transition-colors`}
                           >
                             Complete
                           </button>
@@ -781,7 +782,7 @@ export default function ManagerRoles() {
                 ))
               ) : (
                 <div className="theme-bg-tertiary rounded-xl shadow p-8 text-center">
-                  <ClipboardList className={`h-10 w-10 mx-auto mb-3 ${darkMode ? 'text-amber-500/70' : 'text-blue-500/70'}`} />
+                  <ClipboardList className={`h-10 w-10 mx-auto mb-3 ${darkMode ? 'text-cyan-500/70' : 'text-cyan-500/70'}`} />
                   <h3 className="text-xl font-bold theme-text-primary mb-2">No Tasks Found</h3>
                   <p className="theme-text-secondary">
                     {filterStatus === 'all' 
@@ -799,7 +800,7 @@ export default function ManagerRoles() {
               <div className="theme-bg-tertiary rounded-xl shadow-lg border theme-border-primary overflow-hidden flex-1 flex flex-col">
                 <div className="px-6 py-4 flex justify-between items-center bg-gradient-to-r from-gray-750 to-gray-800 border-b theme-border-primary">
                   <div className="flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 ${darkMode ? 'text-amber-500' : 'text-blue-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 ${darkMode ? 'text-cyan-500' : 'text-cyan-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
                     </svg>
                     <h3 className="text-lg font-medium theme-text-primary">Team Messages</h3>
@@ -813,7 +814,7 @@ export default function ManagerRoles() {
                       {messages.map((message) => (
                         <div 
                           key={message.id} 
-                          className={`p-4 rounded-lg theme-bg-secondary border theme-border-primary ${!message.read ? 'ring-2 ring-amber-500 ring-opacity-50' : ''}`}
+                          className={`p-4 rounded-lg theme-bg-secondary border theme-border-primary ${!message.read ? 'ring-2 ring-cyan-500 ring-opacity-50' : ''}`}
                         >
                           <div className="flex justify-between items-start mb-2">
                             <div className="font-medium theme-text-primary">{message.sender}</div>
@@ -830,7 +831,7 @@ export default function ManagerRoles() {
                               <div className="space-y-2">
                                 {message.attachments.map((attachment, index) => (
                                   <div key={index} className="flex items-center p-2 rounded-lg theme-bg-tertiary">
-                                    <div className={`p-2 rounded-md theme-bg-quaternary ${darkMode ? 'text-amber-500' : 'text-blue-500'}`}>
+                                    <div className={`p-2 rounded-md theme-bg-quaternary ${darkMode ? 'text-cyan-500' : 'text-cyan-500'}`}>
                                       {attachment.type.startsWith('image/') 
                                         ? <Image className="h-5 w-5" />
                                         : attachment.type.includes('pdf')
@@ -846,7 +847,7 @@ export default function ManagerRoles() {
                                       href={attachment.url} 
                                       target="_blank" 
                                       rel="noopener noreferrer"
-                                      className={`p-2 rounded-md theme-bg-quaternary ${darkMode ? 'text-amber-500' : 'text-blue-500'} hover:opacity-80`}
+                                      className={`p-2 rounded-md theme-bg-quaternary ${darkMode ? 'text-cyan-500' : 'text-cyan-500'} hover:opacity-80`}
                                       download={attachment.name}
                                     >
                                       <Download className="h-4 w-4" />
@@ -896,7 +897,7 @@ export default function ManagerRoles() {
                     <input
                       type="text"
                       placeholder="Type your message..."
-                      className="flex-1 theme-bg-quaternary theme-text-primary theme-border-primary border rounded-lg px-4 py-2 mr-2 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      className="flex-1 theme-bg-quaternary theme-text-primary theme-border-primary border rounded-lg px-4 py-2 mr-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
                       onKeyDown={(e) => {
@@ -927,7 +928,7 @@ export default function ManagerRoles() {
                     
                     <button
                       onClick={sendMessage}
-                      className={`px-4 py-2 rounded-lg ${darkMode ? 'bg-amber-500 text-gray-900' : 'bg-blue-500 text-white'} font-medium`}
+                      className={`px-4 py-2 rounded-lg ${darkMode ? 'bg-cyan-500 text-gray-900' : 'bg-cyan-500 text-white'} font-medium`}
                       disabled={(!newMessage.trim() && attachments.length === 0) || isUploading}
                     >
                       {isUploading ? 'Uploading...' : 'Send'}

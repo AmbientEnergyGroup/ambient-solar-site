@@ -24,7 +24,8 @@ export default function RecruitingForm() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const { user, loading, signOut } = useAuth();
+  const auth = useAuth();
+  const { user, loading, signOut } = auth || {};
   const router = useRouter();
 
   // Theme is now managed globally by useTheme hook
@@ -89,7 +90,7 @@ export default function RecruitingForm() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen theme-bg-primary">
-        <div className={`animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 ${darkMode ? 'border-amber-500' : 'border-blue-500'}`}></div>
+        <div className={`animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 ${darkMode ? 'border-cyan-500' : 'border-cyan-500'}`}></div>
       </div>
     );
   }
@@ -160,7 +161,7 @@ export default function RecruitingForm() {
               </p>
               <button 
                 onClick={handleNewReferral}
-                className={`px-6 py-3 rounded-xl font-medium ${darkMode ? 'bg-amber-500 text-gray-900 hover:bg-amber-600' : 'bg-blue-500 text-white hover:bg-blue-600'} transition-colors`}
+                className={`px-6 py-3 rounded-xl font-medium ${darkMode ? 'bg-cyan-500 text-white hover:bg-cyan-600' : 'bg-cyan-500 text-white hover:bg-cyan-600'} transition-colors`}
               >
                 Submit Another Referral
               </button>
@@ -169,7 +170,7 @@ export default function RecruitingForm() {
             <div className="theme-bg-tertiary rounded-xl shadow-lg border theme-border-primary overflow-hidden">
               <div className="px-6 py-4 bg-gradient-to-r from-gray-750 to-gray-800 border-b theme-border-primary">
                 <h2 className="text-xl font-semibold theme-text-primary flex items-center gap-2">
-                  <UserPlus className={`h-6 w-6 ${darkMode ? 'text-amber-500' : 'text-blue-500'}`} />
+                  <UserPlus className={`h-6 w-6 ${darkMode ? 'text-cyan-500' : 'text-cyan-500'}`} />
                   <span>Refer a Friend</span>
                 </h2>
               </div>
@@ -185,7 +186,7 @@ export default function RecruitingForm() {
                       value={formData.referralName}
                       onChange={handleInputChange}
                       required
-                      className="p-3 w-full bg-gray-700 border border-gray-600 rounded-xl text-white focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all"
+                      className="p-3 w-full bg-gray-700 border border-gray-600 rounded-xl text-white focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all"
                       placeholder="John Doe"
                     />
                   </div>
@@ -199,7 +200,7 @@ export default function RecruitingForm() {
                       value={formData.referralEmail}
                       onChange={handleInputChange}
                       required
-                      className="p-3 w-full bg-gray-700 border border-gray-600 rounded-xl text-white focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all"
+                      className="p-3 w-full bg-gray-700 border border-gray-600 rounded-xl text-white focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all"
                       placeholder="john.doe@example.com"
                     />
                   </div>
@@ -213,7 +214,7 @@ export default function RecruitingForm() {
                       value={formData.referralPhone}
                       onChange={handleInputChange}
                       required
-                      className="p-3 w-full bg-gray-700 border border-gray-600 rounded-xl text-white focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all"
+                      className="p-3 w-full bg-gray-700 border border-gray-600 rounded-xl text-white focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all"
                       placeholder="(555) 123-4567"
                     />
                   </div>
@@ -226,7 +227,7 @@ export default function RecruitingForm() {
                       value={formData.relationship}
                       onChange={handleInputChange}
                       required
-                      className="p-3 w-full bg-gray-700 border border-gray-600 rounded-xl text-white focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all"
+                      className="p-3 w-full bg-gray-700 border border-gray-600 rounded-xl text-white focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all"
                     >
                       <option value="Friend">Friend</option>
                       <option value="Family">Family Member</option>
@@ -244,7 +245,7 @@ export default function RecruitingForm() {
                       value={formData.experience}
                       onChange={handleInputChange}
                       required
-                      className="p-3 w-full bg-gray-700 border border-gray-600 rounded-xl text-white focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all"
+                      className="p-3 w-full bg-gray-700 border border-gray-600 rounded-xl text-white focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all"
                     >
                       <option value="None">No Previous Experience</option>
                       <option value="Some">Some Experience (Less than 1 year)</option>
@@ -262,7 +263,7 @@ export default function RecruitingForm() {
                       onChange={handleInputChange}
                       required
                       rows={4}
-                      className="p-3 w-full bg-gray-700 border border-gray-600 rounded-xl text-white focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all"
+                      className="p-3 w-full bg-gray-700 border border-gray-600 rounded-xl text-white focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all"
                       placeholder="Tell us why you think your friend would be a good addition to our sales team..."
                     ></textarea>
                   </div>
@@ -272,7 +273,7 @@ export default function RecruitingForm() {
                   <button 
                     type="submit"
                     disabled={isLoading}
-                    className={`px-6 py-3 rounded-xl font-medium ${darkMode ? 'bg-amber-500 text-gray-900 hover:bg-amber-600' : 'bg-blue-500 text-white hover:bg-blue-600'} transition-colors flex items-center gap-2 disabled:opacity-50`}
+                    className={`px-6 py-3 rounded-xl font-medium ${darkMode ? 'bg-cyan-500 text-white hover:bg-cyan-600' : 'bg-cyan-500 text-white hover:bg-cyan-600'} transition-colors flex items-center gap-2 disabled:opacity-50`}
                   >
                     {isLoading ? (
                       <>
