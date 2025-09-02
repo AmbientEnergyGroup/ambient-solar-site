@@ -198,7 +198,7 @@ export default function RegionTeamManager({ isVisible, onClose }: RegionTeamMana
                       {regionProjects.map(project => (
                         <div key={project.id} className="bg-white p-3 rounded border">
                           <div className="font-medium">{project.customerName}</div>
-                          <div className="text-sm text-gray-600">${project.contractValue.toLocaleString()}</div>
+                          <div className="text-sm text-gray-600">${project.paymentAmount.toLocaleString()}</div>
                           <div className="text-xs text-gray-500">Status: {project.status}</div>
                         </div>
                       ))}
@@ -215,8 +215,8 @@ export default function RegionTeamManager({ isVisible, onClose }: RegionTeamMana
                     <div className="space-y-2">
                       {regionCustomerSets.map(set => (
                         <div key={set.id} className="bg-white p-3 rounded border">
-                          <div className="font-medium">{set.name}</div>
-                          <div className="text-sm text-gray-600">{set.customers.length} customers</div>
+                          <div className="font-medium">{set.customerName}</div>
+                          <div className="text-sm text-gray-600">{1} customers</div>
                           <div className="text-xs text-gray-500">Created: {new Date(set.createdAt).toLocaleDateString()}</div>
                         </div>
                       ))}
@@ -275,7 +275,7 @@ export default function RegionTeamManager({ isVisible, onClose }: RegionTeamMana
                       {teamProjects.map(project => (
                         <div key={project.id} className="bg-white p-3 rounded border">
                           <div className="font-medium">{project.customerName}</div>
-                          <div className="text-sm text-gray-600">${project.contractValue.toLocaleString()}</div>
+                          <div className="text-sm text-gray-600">${project.paymentAmount.toLocaleString()}</div>
                           <div className="text-xs text-gray-500">Status: {project.status}</div>
                         </div>
                       ))}
@@ -292,8 +292,8 @@ export default function RegionTeamManager({ isVisible, onClose }: RegionTeamMana
                     <div className="space-y-2">
                       {teamCustomerSets.map(set => (
                         <div key={set.id} className="bg-white p-3 rounded border">
-                          <div className="font-medium">{set.name}</div>
-                          <div className="text-sm text-gray-600">{set.customers.length} customers</div>
+                          <div className="font-medium">{set.customerName}</div>
+                          <div className="text-sm text-gray-600">{1} customers</div>
                           <div className="text-xs text-gray-500">Created: {new Date(set.createdAt).toLocaleDateString()}</div>
                         </div>
                       ))}

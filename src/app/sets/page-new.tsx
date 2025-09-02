@@ -108,6 +108,11 @@ export default function Sets() {
       const aVal = a[sortField];
       const bVal = b[sortField];
       
+      // Handle undefined values
+      if (aVal === undefined && bVal === undefined) return 0;
+      if (aVal === undefined) return sortDirection === "asc" ? 1 : -1;
+      if (bVal === undefined) return sortDirection === "asc" ? -1 : 1;
+      
       if (aVal < bVal) return sortDirection === "asc" ? -1 : 1;
       if (aVal > bVal) return sortDirection === "asc" ? 1 : -1;
       return 0;
@@ -225,7 +230,12 @@ export default function Sets() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Sidebar isOpen={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
+      <Sidebar 
+        sidebarOpen={sidebarOpen} 
+        setSidebarOpen={setSidebarOpen}
+        signOut={signOut}
+        darkMode={darkMode}
+      />
       
       <div className={`transition-all duration-300 ${sidebarOpen ? 'ml-64' : 'ml-16'}`}>
         <div className="p-6">

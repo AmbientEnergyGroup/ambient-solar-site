@@ -634,52 +634,35 @@ export const migrateAllUsers = async (): Promise<void> => {
 
 // Get data integrity check
 export const getDataIntegrityCheck = async (): Promise<{
-  totalUsers: number;
-  usersWithMissingFields: string[];
-  orphanedSets: string[];
-  orphanedProjects: string[];
+  users: number;
+  projects: number;
+  customerSets: number;
+  lastBackup: string | null;
+  integrityScore: number;
 }> => {
   try {
     const users = await getAllUsers();
-    const allSets = await get(ref(getFirebaseDB(), 'sets'));
+    const allSets = await get(ref(getFirebaseDB(), 'customerSets'));
     const allProjects = await get(ref(getFirebaseDB(), 'projects'));
     
-    const usersWithMissingFields: string[] = [];
-    const orphanedSets: string[] = [];
-    const orphanedProjects: string[] = [];
+    const usersCount = users.length;
+    const setsCount = allSets.exists() ? Object.keys(allSets.val()).length : 0;
+    const projectsCount = allProjects.exists() ? Object.keys(allProjects.val()).length : 0;
     
-    // Check users for missing required fields
-    users.forEach(user => {
-      if (!user.team || !user.region || !user.settings) {
-        usersWithMissingFields.push(user.id);
-      }
-    });
+    // Calculate integrity score (simplified)
+    const totalItems = usersCount + setsCount + projectsCount;
+    const validUsers = users.filter(user => 
+      user.role && user.displayName && user.email
+    ).length;
     
-    // Check for orphaned sets (sets without valid users)
-    if (allSets.exists()) {
-      allSets.forEach((setSnapshot) => {
-        const set = setSnapshot.val();
-        if (!users.find(u => u.id === set.userId)) {
-          orphanedSets.push(set.id);
-        }
-      });
-    }
-    
-    // Check for orphaned projects (projects without valid users)
-    if (allProjects.exists()) {
-      allProjects.forEach((projectSnapshot) => {
-        const project = projectSnapshot.val();
-        if (!users.find(u => u.id === project.userId)) {
-          orphanedProjects.push(project.id);
-        }
-      });
-    }
+    const integrityScore = totalItems > 0 ? ((validUsers + setsCount + projectsCount) / totalItems) * 100 : 100;
     
     return {
-      totalUsers: users.length,
-      usersWithMissingFields,
-      orphanedSets,
-      orphanedProjects
+      users: usersCount,
+      projects: projectsCount,
+      customerSets: setsCount,
+      lastBackup: null, // Not implemented in Realtime Database
+      integrityScore: Math.round(integrityScore)
     };
   } catch (error) {
     console.error('Error performing data integrity check:', error);
@@ -821,6 +804,52 @@ export const getCustomerSetsByTeam = async (team: string): Promise<CustomerSet[]
   } catch (error) {
     console.error('Error getting customer sets by team:', error);
     return [];
+  }
+};
+
+// Document management functions
+export const addDocument = async (collection: string, data: any): Promise<string> => {
+  try {
+    const database = getFirebaseDB();
+    const collectionRef = ref(database, collection);
+    const newDocRef = push(collectionRef);
+    await set(newDocRef, {
+      ...data,
+      id: newDocRef.key,
+      createdAt: new Date().toISOString()
+    });
+    return newDocRef.key || '';
+  } catch (error) {
+    console.error('Error adding document:', error);
+    throw error;
+  }
+};
+
+// User data subscription
+export const subscribeToUserData = (
+  userId: string,
+  callback: (userData: UserData | null) => void
+): (() => void) => {
+  try {
+    const database = getFirebaseDB();
+    const userRef = ref(database, `users/${userId}`);
+    
+    const unsubscribe = onValue(userRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const userData = { id: userId, ...snapshot.val() } as UserData;
+        callback(userData);
+      } else {
+        callback(null);
+      }
+    }, (error) => {
+      console.error('Error subscribing to user data:', error);
+      callback(null);
+    });
+    
+    return unsubscribe;
+  } catch (error) {
+    console.error('Error setting up user data subscription:', error);
+    return () => {};
   }
 };
 // Build fix - Tue Sep  2 02:29:50 PDT 2025

@@ -162,7 +162,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           
           // Try to create user data in Firestore
           try {
-            await createUserData(firebaseUser, defaultRole);
+            await createUserData(firebaseUser, { role: defaultRole });
             setUserData(defaultUserData);
           } catch (createError) {
             console.error('Error creating user data:', createError);
@@ -293,7 +293,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const existingUser = await getUserData(result.user.uid);
       if (!existingUser) {
         // Create new user data
-        await createUserData(result.user, 'setter');
+        await createUserData(result.user, { role: 'setter' });
       }
     } catch (error: any) {
       console.error('Error signing in with Google:', error);
