@@ -38,38 +38,62 @@ export default function CloserCore() {
 
     // Set up real-time subscriptions to Firestore
   useEffect(() => {
-    if (!user?.uid) return;
+    if (!user?.uid) {
+      setLoading(false);
+      return;
+    }
 
     console.log('Setting up real-time subscriptions for closer:', user.uid);
     
     let unsubscribeAvailable: (() => void) | null = null;
     let unsubscribeAssigned: (() => void) | null = null;
 
+    // Set a timeout to prevent infinite loading
+    const loadingTimeout = setTimeout(() => {
+      console.log('Loading timeout reached, setting loading to false');
+      setLoading(false);
+    }, 10000); // 10 second timeout
+
     if (activeTab === 'available') {
-      unsubscribeAvailable = subscribeToAvailableSets((availableSets) => {
-        console.log('Received available sets from Firestore:', availableSets.length);
-        const closerSets: CloserSet[] = availableSets.map(set => ({
-          ...set,
-          setterName: `Setter ${set.userId?.slice(-4) || 'Unknown'}`,
-          office: userData?.office || 'Unknown'
-        }));
-        setSets(closerSets);
+      try {
+        unsubscribeAvailable = subscribeToAvailableSets((availableSets) => {
+          console.log('Received available sets from Firestore:', availableSets.length);
+          const closerSets: CloserSet[] = availableSets.map(set => ({
+            ...set,
+            setterName: `Setter ${set.userId?.slice(-4) || 'Unknown'}`,
+            office: userData?.office || 'Unknown'
+          }));
+          setSets(closerSets);
+          setLoading(false);
+          clearTimeout(loadingTimeout);
+        });
+      } catch (error) {
+        console.error('Error setting up available sets subscription:', error);
         setLoading(false);
-      });
+        clearTimeout(loadingTimeout);
+      }
     } else if (activeTab === 'assigned') {
-      unsubscribeAssigned = subscribeToCloserSets(user.uid, (assignedSets) => {
-        console.log('Received assigned sets from Firestore:', assignedSets.length);
-        const closerSets: CloserSet[] = assignedSets.map(set => ({
-          ...set,
-          setterName: `Setter ${set.userId?.slice(-4) || 'Unknown'}`,
-          office: userData?.office || 'Unknown'
-        }));
-        setSets(closerSets);
+      try {
+        unsubscribeAssigned = subscribeToCloserSets(user.uid, (assignedSets) => {
+          console.log('Received assigned sets from Firestore:', assignedSets.length);
+          const closerSets: CloserSet[] = assignedSets.map(set => ({
+            ...set,
+            setterName: `Setter ${set.userId?.slice(-4) || 'Unknown'}`,
+            office: userData?.office || 'Unknown'
+          }));
+          setSets(closerSets);
+          setLoading(false);
+          clearTimeout(loadingTimeout);
+        });
+      } catch (error) {
+        console.error('Error setting up assigned sets subscription:', error);
         setLoading(false);
-      });
+        clearTimeout(loadingTimeout);
+      }
     }
 
     return () => {
+      clearTimeout(loadingTimeout);
       if (unsubscribeAvailable) unsubscribeAvailable();
       if (unsubscribeAssigned) unsubscribeAssigned();
     };
@@ -167,8 +191,14 @@ export default function CloserCore() {
   // Show loading state while checking authentication
   if (authLoading || loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen theme-bg-primary">
-        <div className={`animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 ${darkMode ? 'border-cyan-500' : 'border-cyan-500'}`}></div>
+      <div className="flex flex-col items-center justify-center min-h-screen theme-bg-primary">
+        <div className={`animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 ${darkMode ? 'border-cyan-500' : 'border-cyan-500'} mb-4`}></div>
+        <div className="text-gray-400 text-sm">
+          {authLoading ? 'Loading authentication...' : 'Loading sets...'}
+        </div>
+        <div className="text-gray-500 text-xs mt-2">
+          User: {user?.email || 'Not authenticated'} | Role: {userData?.role || user?.role || 'Unknown'}
+        </div>
       </div>
     );
   }
