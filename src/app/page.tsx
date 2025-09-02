@@ -28,7 +28,7 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [isClient, setIsClient] = useState(false);
   
-  const { user, loading, sendSignInLink } = useAuth();
+  const { user, loading, sendSignInLink, signOut } = useAuth();
   const router = useRouter();
 
   // Client-side initialization
@@ -36,17 +36,9 @@ export default function Home() {
     setIsClient(true);
   }, []);
 
-  // Optimized redirect with debouncing
-  useEffect(() => {
-    if (user && !loading && isClient) {
-      // Use requestIdleCallback for non-blocking navigation
-      if ('requestIdleCallback' in window) {
-        requestIdleCallback(() => router.push('/dashboard'));
-      } else {
-        setTimeout(() => router.push('/dashboard'), 0);
-      }
-    }
-  }, [user, loading, router, isClient]);
+  // Note: Removed automatic redirect to dashboard
+  // Users must explicitly navigate to dashboard or other pages
+  // This ensures proper authentication flow
 
   // Optimized form submission
   const handleEmailSubmit = useCallback(async (e: React.FormEvent) => {
@@ -130,7 +122,29 @@ export default function Home() {
       {/* Login form */}
       <div className="flex-1 flex flex-col items-center justify-center w-full px-4 sm:px-6 relative z-10">
         <div className="w-full max-w-sm sm:max-w-md bg-gray-600 bg-opacity-90 p-4 sm:p-6 md:p-8 rounded-lg shadow-lg text-white">
-          {!linkSent ? (
+          {user ? (
+            <div className="text-center py-6 sm:py-8">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 sm:h-16 sm:w-16 mx-auto text-green-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">Welcome Back!</h2>
+              <p className="text-gray-300 mb-4 sm:mb-6 text-sm sm:text-base">You're logged in as <span className="font-medium">{user.email}</span></p>
+              <button
+                onClick={() => router.push('/dashboard')}
+                className="w-full bg-cyan-500 hover:bg-cyan-600 text-white font-semibold py-3 px-4 rounded-full transition duration-200 text-base mb-4"
+              >
+                Go to Dashboard
+              </button>
+              <button
+                onClick={async () => {
+                  await signOut();
+                }}
+                className="text-gray-400 hover:text-gray-300 underline text-sm sm:text-base"
+              >
+                Sign Out
+              </button>
+            </div>
+          ) : !linkSent ? (
             <>
               <h2 className="text-xl sm:text-2xl font-bold text-white mb-4 sm:mb-6 text-center">
                 Rep Login

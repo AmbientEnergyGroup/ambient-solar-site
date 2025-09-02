@@ -57,6 +57,13 @@ export default function HRPage() {
   const { darkMode, toggleTheme } = useTheme();
   const auth = useAuth();
   const { user, userData, loading, signOut } = auth || {};
+
+  // Redirect to home if not authenticated
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push("/");
+    }
+  }, [user, loading, router]);
   const [commissionPayments, setCommissionPayments] = useState<CommissionPayment[]>([]);
   const [nextPayment, setNextPayment] = useState<CommissionPayment | null>(null);
   const [paymentHistory, setPaymentHistory] = useState<CommissionPayment[]>([]);
@@ -859,6 +866,11 @@ export default function HRPage() {
         <div className={`animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 ${darkMode ? 'border-cyan-500' : 'border-cyan-500'}`}></div>
       </div>
     );
+  }
+
+  // If user is not authenticated and not loading, this will render briefly before redirect
+  if (!user) {
+    return null;
   }
 
   return (
