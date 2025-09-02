@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import AmbientLogo from "./AmbientLogo";
+import { useAuth } from "@/lib/contexts/AuthContext";
 
 interface SidebarProps {
   signOut: () => void;
@@ -16,6 +17,8 @@ interface SidebarProps {
 export default function Sidebar({ signOut, darkMode, sidebarOpen, setSidebarOpen }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const auth = useAuth();
+  const { user } = auth || {};
   const [showDevCodeInput, setShowDevCodeInput] = useState(false);
   const [devCode, setDevCode] = useState("");
   const [devModeActive, setDevModeActive] = useState(false);
@@ -69,7 +72,7 @@ export default function Sidebar({ signOut, darkMode, sidebarOpen, setSidebarOpen
           <a href="/canvassing" className={`flex items-center px-4 py-3 ${
             pathname === '/canvassing' 
               ? 'theme-text-primary theme-bg-active' 
-              : 'theme-text-secondary hover:theme-text-primary hover:bg-opacity-10 hover:bg-gray-500 transition-colors duration-200'
+              : 'text-gray-400 hover:text-gray-500 transition-colors duration-200 cursor-not-allowed'
           }`}>
             <Map className="h-5 w-5 mr-3" />
             Canvassing
@@ -77,7 +80,7 @@ export default function Sidebar({ signOut, darkMode, sidebarOpen, setSidebarOpen
           <a href="/messages" className={`flex items-center px-4 py-3 ${
             pathname === '/messages' 
               ? 'theme-text-primary theme-bg-active' 
-              : 'theme-text-secondary hover:theme-text-primary hover:bg-opacity-10 hover:bg-gray-500 transition-colors duration-200'
+              : 'text-gray-400 hover:text-gray-500 transition-colors duration-200 cursor-not-allowed'
           }`}>
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
@@ -113,6 +116,24 @@ export default function Sidebar({ signOut, darkMode, sidebarOpen, setSidebarOpen
             Team
           </a>
 
+          <a href="/closer-core" className={`flex items-center px-4 py-3 ${
+            pathname === '/closer-core' 
+              ? 'theme-text-primary theme-bg-active' 
+              : (user?.role === 'setter' 
+                  ? 'text-gray-400 hover:text-gray-500 transition-colors duration-200 cursor-not-allowed'
+                  : 'theme-text-secondary hover:theme-text-primary hover:bg-opacity-10 hover:bg-gray-500 transition-colors duration-200'
+                )
+          }`} style={{
+            pointerEvents: user?.role === 'setter' ? 'none' : 'auto'
+          }}>
+            <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 mr-3 ${
+              user?.role === 'setter' ? 'text-gray-400' : ''
+            }`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+            Closer Core
+          </a>
+
 
           <a href="/hr" className={`flex items-center px-4 py-3 ${
             pathname === '/hr' 
@@ -126,14 +147,7 @@ export default function Sidebar({ signOut, darkMode, sidebarOpen, setSidebarOpen
           </a>
 
 
-          <a href="/recruiting-form" className={`flex items-center px-4 py-3 ${
-            pathname === '/recruiting-form' 
-              ? 'theme-text-primary theme-bg-active' 
-              : 'theme-text-secondary hover:theme-text-primary hover:bg-opacity-10 hover:bg-gray-500 transition-colors duration-200'
-          }`}>
-            <UserPlus className="h-5 w-5 mr-3" />
-            Recruiting Form
-          </a>
+
 
           
           {/* New Schedule link */}

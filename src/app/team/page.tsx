@@ -18,6 +18,25 @@ export default function Team() {
   const [userOffice, setUserOffice] = useState("Fresno"); // Default office
   const [lancasterTeamSize, setLancasterTeamSize] = useState(0);
   const [teamGoalKW, setTeamGoalKW] = useState(0);
+  const [ytdTeamEarnings, setYtdTeamEarnings] = useState(0);
+  const [ytdRevenue, setYtdRevenue] = useState(0);
+  const [showAddRepForm, setShowAddRepForm] = useState(false);
+  const [newRepData, setNewRepData] = useState({
+    name: '',
+    email: '',
+    role: 'Sales Rep',
+    office: 'Fresno',
+    recruitedBy: ''
+  });
+  const [showRepInfo, setShowRepInfo] = useState(false);
+  const [selectedRepInfo, setSelectedRepInfo] = useState<{
+    name: string;
+    email: string;
+    phone: string;
+  } | null>(null);
+  const [loadingTimeout, setLoadingTimeout] = useState(false);
+  const [repPerformance, setRepPerformance] = useState<{[key: string]: number}>({});
+  const [teamFilter, setTeamFilter] = useState<'direct' | 'downline'>('direct');
   const WEEKLY_GOAL_KW = 200;
   const { darkMode } = useTheme();
   
@@ -29,6 +48,19 @@ export default function Team() {
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  // Add timeout to prevent infinite loading
+  useEffect(() => {
+    if (loading) {
+      const timeout = setTimeout(() => {
+        setLoadingTimeout(true);
+      }, 10000); // 10 seconds timeout
+      
+      return () => clearTimeout(timeout);
+    } else {
+      setLoadingTimeout(false);
+    }
+  }, [loading]);
 
   // Load user's office from localStorage
   useEffect(() => {
@@ -84,6 +116,209 @@ export default function Team() {
     setTeamGoalKW(totalKW);
   }, [isClient]);
 
+  // Calculate YTD team earnings and revenue
+  useEffect(() => {
+    let totalEarnings = 0;
+    let totalRevenue = 0;
+    const projectsRaw = localStorage.getItem('projects');
+    if (projectsRaw) {
+      try {
+        const projects = JSON.parse(projectsRaw);
+        const currentYear = new Date().getFullYear();
+        
+        for (const project of projects) {
+          // Check if project is from current year
+          if (project.installDate && new Date(project.installDate).getFullYear() === currentYear) {
+            // Add to revenue
+            if (project.paymentAmount) {
+              totalRevenue += project.paymentAmount;
+            }
+            
+            // Calculate earnings based on commission rate
+            if (project.commissionRate && project.systemSize) {
+              const systemSizeKW = parseFloat(project.systemSize);
+              const commission = systemSizeKW * project.commissionRate;
+              totalEarnings += commission;
+            }
+          }
+        }
+      } catch {}
+    }
+    setYtdTeamEarnings(totalEarnings);
+    setYtdRevenue(totalRevenue);
+  }, [isClient]);
+
+  // Calculate YTD kW sold for each rep
+  useEffect(() => {
+    const performance: {[key: string]: number} = {};
+    const projectsRaw = localStorage.getItem('projects');
+    if (projectsRaw) {
+      try {
+        const projects = JSON.parse(projectsRaw);
+        const currentYear = new Date().getFullYear();
+        
+        // Sample rep data - in a real app, this would come from your user database
+        const reps = [
+          { name: 'John Doe', email: 'john.doe@example.com' },
+          { name: 'Sarah Johnson', email: 'sarah.j@example.com' },
+          { name: 'Mike Wilson', email: 'mike.w@example.com' }
+        ];
+        
+        // Initialize performance for each rep
+        reps.forEach(rep => {
+          performance[rep.name] = 0;
+        });
+        
+        for (const project of projects) {
+          // Check if project is from current year
+          if (project.installDate && new Date(project.installDate).getFullYear() === currentYear) {
+            if (project.systemSize && project.customerName) {
+              const systemSizeKW = parseFloat(project.systemSize);
+              
+              // Match project to rep (in a real app, you'd match by userId or rep assignment)
+              // For demo purposes, we'll distribute projects among reps
+              const repIndex = Math.abs(project.customerName.length) % reps.length;
+              const assignedRep = reps[repIndex];
+              performance[assignedRep.name] += systemSizeKW;
+            }
+          }
+        }
+      } catch {}
+    }
+    setRepPerformance(performance);
+  }, [isClient]);
+
+  // Handle form input changes
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setNewRepData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  // Handle form submission
+  const handleAddRep = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      // Here you would typically send the data to your backend API
+      // For now, we'll simulate the email sending
+      console.log('Sending invitation to:', newRepData);
+      
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Reset form and close dropdown
+      setNewRepData({
+        name: '',
+        email: '',
+        role: 'Sales Rep',
+        office: 'Fresno',
+        recruitedBy: ''
+      });
+      setShowAddRepForm(false);
+      
+      // Show success message (you could add a toast notification here)
+      alert(`Invitation sent to ${newRepData.name} at ${newRepData.email}. They will be recruited by ${newRepData.recruitedBy}`);
+      
+    } catch (error) {
+      console.error('Error sending invitation:', error);
+      alert('Failed to send invitation. Please try again.');
+    }
+  };
+
+  // Handle showing rep info
+  const handleShowRepInfo = (rep: { name: string; email: string; phone: string }) => {
+    setSelectedRepInfo(rep);
+    setShowRepInfo(true);
+  };
+
+  // Filter team members based on Direct vs Downline
+  const getFilteredTeamMembers = () => {
+    // Sample team data - in a real app, this would come from your database
+    const allTeamMembers = [
+      {
+        name: 'John Doe',
+        email: 'john.doe@example.com',
+        phone: '(555) 123-4567',
+        role: 'Manager',
+        mr: 'Development User', // Recruited by current user
+        status: 'Active',
+        performance: repPerformance['John Doe'] || 0,
+        isDirect: true // Direct report - recruited by current user
+      },
+      {
+        name: 'Sarah Johnson',
+        email: 'sarah.j@example.com',
+        phone: '(555) 234-5678',
+        role: 'Sales Rep',
+        mr: 'Development User', // Recruited by current user
+        status: 'Active',
+        performance: repPerformance['Sarah Johnson'] || 0,
+        isDirect: true // Direct report - recruited by current user
+      },
+      {
+        name: 'Mike Wilson',
+        email: 'mike.w@example.com',
+        phone: '(555) 345-6789',
+        role: 'Sales Rep',
+        mr: 'John Doe', // Recruited by John Doe
+        status: 'Pending',
+        performance: repPerformance['Mike Wilson'] || 0,
+        isDirect: false // Downline - recruited by John Doe, not current user
+      },
+      {
+        name: 'Emily Chen',
+        email: 'emily.c@example.com',
+        phone: '(555) 456-7890',
+        role: 'Sales Rep',
+        mr: 'Sarah Johnson', // Recruited by Sarah Johnson
+        status: 'Active',
+        performance: repPerformance['Emily Chen'] || 0,
+        isDirect: false // Downline - recruited by Sarah Johnson, not current user
+      }
+    ];
+
+    if (teamFilter === 'direct') {
+      return allTeamMembers.filter(member => member.isDirect);
+    } else {
+      return allTeamMembers; // Show all team members (direct + downline)
+    }
+  };
+
+  // Get list of managers for the Add Rep form
+  const getManagersList = () => {
+    const allTeamMembers = getFilteredTeamMembers();
+    const managers = allTeamMembers.filter(member => member.role === 'Manager');
+    
+    // Add current user as a manager option
+    const currentUser = {
+      name: user?.displayName || user?.email || 'Current User',
+      email: user?.email || '',
+      role: 'Manager'
+    };
+    
+    return [currentUser, ...managers];
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showAddRepForm) {
+        const target = event.target as Element;
+        if (!target.closest('.add-rep-dropdown')) {
+          setShowAddRepForm(false);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showAddRepForm]);
+
   // Redirect to home if not authenticated
   useEffect(() => {
     if (!loading && !user) {
@@ -92,17 +327,44 @@ export default function Team() {
   }, [user, loading, router]);
 
   // Show loading state while checking authentication
-  if (loading) {
+  if (loading && !loadingTimeout) {
     return (
       <div className="flex items-center justify-center min-h-screen theme-bg-primary">
-                        <div className={`animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 ${darkMode ? 'border-cyan-500' : 'border-cyan-500'}`}></div>
+        <div className="text-center">
+          <div className={`animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 ${darkMode ? 'border-cyan-500' : 'border-cyan-500'} mx-auto mb-4`}></div>
+          <p className="theme-text-primary">Loading...</p>
+        </div>
       </div>
     );
   }
 
-  // If user is not authenticated and not loading, this will render briefly before redirect
+  // Show timeout message if loading takes too long
+  if (loadingTimeout) {
+    return (
+      <div className="flex items-center justify-center min-h-screen theme-bg-primary">
+        <div className="text-center">
+          <p className="theme-text-primary mb-4">Loading is taking longer than expected...</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-4 py-2 bg-cyan-500 text-white rounded hover:bg-cyan-600"
+          >
+            Refresh Page
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // If user is not authenticated and not loading, redirect to home
   if (!user) {
-    return null;
+    router.push("/");
+    return (
+      <div className="flex items-center justify-center min-h-screen theme-bg-primary">
+        <div className="text-center">
+          <p className="theme-text-primary">Redirecting to login...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -154,88 +416,171 @@ export default function Team() {
           <main className="p-6">
             {/* Search and filters */}
             <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              {/* Removed search bar */}
-              <div className="flex items-center gap-2">
-                {/* Removed Filter button */}
-                <button className={`px-4 py-2 ${darkMode ? 'bg-cyan-500 hover:bg-cyan-600' : 'bg-cyan-500 hover:bg-cyan-600'} text-white rounded-lg font-medium transition-colors duration-200 flex items-center`}>
+              <div className="flex items-center gap-2 relative add-rep-dropdown">
+                <button 
+                  onClick={() => setShowAddRepForm(!showAddRepForm)}
+                  className={`px-4 py-2 ${darkMode ? 'bg-cyan-500 hover:bg-cyan-600' : 'bg-cyan-500 hover:bg-cyan-600'} text-white rounded-lg font-medium transition-colors duration-200 flex items-center`}
+                >
                   <Plus className="h-4 w-4 mr-2" />
-                  Add Member
+                  Add Rep
                 </button>
+                
+                {/* Dropdown Form */}
+                {showAddRepForm && (
+                  <div className="absolute top-full left-0 mt-2 w-80 theme-bg-tertiary border theme-border-primary rounded-lg shadow-lg z-50">
+                    <div className="p-4">
+                      <h3 className="text-lg font-semibold theme-text-primary mb-4">Add New Rep</h3>
+                      <form onSubmit={handleAddRep} className="space-y-4">
+                        {/* Name Field */}
+                        <div>
+                          <label className="block text-sm font-medium theme-text-secondary mb-1">
+                            Full Name
+                          </label>
+                          <input
+                            type="text"
+                            name="name"
+                            value={newRepData.name}
+                            onChange={handleFormChange}
+                            required
+                            className="w-full px-3 py-2 border theme-border-primary rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500 theme-bg-quaternary theme-text-primary"
+                            placeholder="Enter rep's full name"
+                          />
+                        </div>
+                        
+                        {/* Email Field */}
+                        <div>
+                          <label className="block text-sm font-medium theme-text-secondary mb-1">
+                            Email Address
+                          </label>
+                          <input
+                            type="email"
+                            name="email"
+                            value={newRepData.email}
+                            onChange={handleFormChange}
+                            required
+                            className="w-full px-3 py-2 border theme-border-primary rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500 theme-bg-quaternary theme-text-primary"
+                            placeholder="Enter rep's email address"
+                          />
+                        </div>
+                        
+                        {/* Role Field */}
+                        <div>
+                          <label className="block text-sm font-medium theme-text-secondary mb-1">
+                            Role
+                          </label>
+                          <select
+                            name="role"
+                            value={newRepData.role}
+                            onChange={handleFormChange}
+                            className="w-full px-3 py-2 border theme-border-primary rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500 theme-bg-quaternary theme-text-primary"
+                          >
+                            <option value="Sales Rep">Sales Rep</option>
+                            <option value="Manager">Manager</option>
+                            <option value="Team Lead">Team Lead</option>
+                          </select>
+                        </div>
+                        
+                        {/* Office Field */}
+                        <div>
+                          <label className="block text-sm font-medium theme-text-secondary mb-1">
+                            Office
+                          </label>
+                          <select
+                            name="office"
+                            value={newRepData.office}
+                            onChange={handleFormChange}
+                            className="w-full px-3 py-2 border theme-border-primary rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500 theme-bg-quaternary theme-text-primary"
+                          >
+                            <option value="Fresno">Fresno</option>
+                            <option value="Lancaster">Lancaster</option>
+                          </select>
+                        </div>
+                        
+                        {/* Recruited By Field */}
+                        <div>
+                          <label className="block text-sm font-medium theme-text-secondary mb-1">
+                            Recruited By (Manager)
+                          </label>
+                          <select
+                            name="recruitedBy"
+                            value={newRepData.recruitedBy}
+                            onChange={handleFormChange}
+                            className="w-full px-3 py-2 border theme-border-primary rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500 theme-bg-quaternary theme-text-primary"
+                            required
+                          >
+                            <option value="">Select manager</option>
+                            {getManagersList().map((manager, index) => (
+                              <option key={index} value={manager.name}>
+                                {manager.name} {manager.email && `(${manager.email})`}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        
+                        {/* Form Actions */}
+                        <div className="flex gap-2 pt-2">
+                          <button
+                            type="submit"
+                            className="flex-1 px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-md font-medium transition-colors duration-200"
+                          >
+                            Send Invitation
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setShowAddRepForm(false)}
+                            className="px-4 py-2 theme-bg-quaternary theme-text-primary theme-border-primary border rounded-md hover:theme-bg-tertiary transition-colors duration-200"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
             
-            {/* Office-specific overview cards */}
+            {/* Overview cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              {/* Rep Name Card */}
               <div className="theme-bg-tertiary p-6 rounded-lg shadow-sm border theme-border-primary">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm theme-text-secondary">Lancaster California</p>
-                    <p className="text-2xl font-bold theme-text-primary">{lancasterTeamSize}</p>
+                    <p className="text-2xl font-bold theme-text-primary">{user?.displayName || user?.email || 'User'}</p>
                   </div>
-                  <div className={`p-3 rounded-full border-2 border-black ${darkMode ? 'bg-cyan-500 bg-opacity-20' : 'bg-cyan-500 bg-opacity-20'}`}> {/* Black border for Lancaster */}
-                    <OfficeLogos office="Lancaster" size={48} />
-                  </div>
-                </div>
-              </div>
-              
-              <div className="theme-bg-tertiary p-6 rounded-lg shadow-md border theme-border-primary">
-                <div className="flex items-center justify-between">
-                  <div className="w-full pr-4">
-                    <p className="text-sm font-semibold text-gray-300 mb-1 tracking-wide uppercase">Team Goal</p>
-                    <p className="text-3xl font-extrabold text-white mb-2">{teamGoalKW} <span className="text-lg font-medium text-gray-400">/ {WEEKLY_GOAL_KW} kW</span></p>
-                    <div className="mb-1 flex justify-between items-end">
-                      <span className="text-xs font-medium text-gray-400">This Week</span>
-                      <span className="text-xs font-medium text-gray-400">{Math.round((teamGoalKW / WEEKLY_GOAL_KW) * 100)}%</span>
-                    </div>
-                    <div className="w-full h-7 bg-black rounded-xl shadow-inner overflow-hidden relative">
-                      <div
-                        className="h-7 rounded-xl transition-all duration-300"
-                        style={{
-                          width: `${Math.min((teamGoalKW / WEEKLY_GOAL_KW) * 100, 100)}%`,
-                          background: '#F59E42', // Company orange
-                          boxShadow: darkMode
-                            ? '0 2px 8px 0 #F59E4280'
-                            : '0 2px 8px 0 #F59E4280',
-                        }}
-                      ></div>
-                      {/* Animated marker for current progress */}
-                      {(() => {
-                        const percent = Math.min((teamGoalKW / WEEKLY_GOAL_KW) * 100, 100);
-                        // Marker width is 24px (w-6), bar is 100% width
-                        // To keep it flush at 0% and 100%, use calc with translation
-                        let markerLeft = `calc(${percent}% - 12px)`;
-                        if (percent <= 0) markerLeft = '0px';
-                        if (percent >= 100) markerLeft = 'calc(100% - 24px)';
-                        return (
-                          <div
-                            className="absolute top-0 flex flex-col items-center"
-                            style={{ left: markerLeft }}
-                          >
-                            <div className={`w-6 h-6 rounded-full border-2 ${darkMode ? 'border-cyan-500 bg-cyan-400' : 'border-cyan-400 bg-cyan-300'} shadow-lg flex items-center justify-center`}>
-                              <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7" fill="#fff"/></svg>
-                            </div>
-                          </div>
-                        );
-                      })()}
-                    </div>
-                  </div>
-                  <div className={`p-4 rounded-full ${darkMode ? 'bg-green-500 bg-opacity-20' : 'bg-green-500 bg-opacity-20'} shadow-lg ml-4 flex-shrink-0`}>
-                    <svg xmlns="http://www.w3.org/2000/svg" className={`h-10 w-10 ${darkMode ? 'text-green-500' : 'text-green-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <div className={`p-3 rounded-full ${darkMode ? 'bg-cyan-500 bg-opacity-20' : 'bg-cyan-500 bg-opacity-20'}`}>
+                    <svg xmlns="http://www.w3.org/2000/svg" className={`h-6 w-6 ${darkMode ? 'text-cyan-500' : 'text-cyan-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
                   </div>
                 </div>
               </div>
               
+              {/* YTD Team Earnings Card */}
               <div className="theme-bg-tertiary p-6 rounded-lg shadow-sm border theme-border-primary">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm theme-text-secondary">{userOffice} Monthly Revenue</p>
-                    <p className="text-2xl font-bold theme-text-primary">$156K</p>
+                    <p className="text-sm theme-text-secondary">YTD Team Earnings</p>
+                    <p className="text-2xl font-bold theme-text-primary">${ytdTeamEarnings.toLocaleString()}</p>
+                  </div>
+                  <div className={`p-3 rounded-full ${darkMode ? 'bg-green-500 bg-opacity-20' : 'bg-green-500 bg-opacity-20'}`}>
+                    <svg xmlns="http://www.w3.org/2000/svg" className={`h-6 w-6 ${darkMode ? 'text-green-500' : 'text-green-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+              
+              {/* YTD Revenue Card */}
+              <div className="theme-bg-tertiary p-6 rounded-lg shadow-sm border theme-border-primary">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm theme-text-secondary">YTD Revenue</p>
+                    <p className="text-2xl font-bold theme-text-primary">${ytdRevenue.toLocaleString()}</p>
                   </div>
                   <div className={`p-3 rounded-full ${darkMode ? 'bg-purple-500 bg-opacity-20' : 'bg-purple-500 bg-opacity-20'}`}>
                     <svg xmlns="http://www.w3.org/2000/svg" className={`h-6 w-6 ${darkMode ? 'text-purple-500' : 'text-purple-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                     </svg>
                   </div>
                 </div>
@@ -245,23 +590,52 @@ export default function Team() {
             {/* Team members table */}
             <div className="theme-bg-tertiary rounded-lg shadow overflow-hidden">
               <div className="px-6 py-4 border-b theme-border-primary">
-                <h2 className="text-lg font-semibold theme-text-primary">Team Members</h2>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-semibold theme-text-primary">Team Members</h2>
+                  
+                  {/* Filter buttons */}
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => setTeamFilter('direct')}
+                      className={`px-3 py-1 text-sm font-medium rounded-md transition-colors duration-200 ${
+                        teamFilter === 'direct'
+                          ? 'bg-cyan-500 text-white'
+                          : 'theme-bg-quaternary theme-text-primary hover:theme-bg-tertiary'
+                      }`}
+                    >
+                      Direct
+                    </button>
+                    <button
+                      onClick={() => setTeamFilter('downline')}
+                      className={`px-3 py-1 text-sm font-medium rounded-md transition-colors duration-200 ${
+                        teamFilter === 'downline'
+                          ? 'bg-cyan-500 text-white'
+                          : 'theme-bg-quaternary theme-text-primary hover:theme-bg-tertiary'
+                      }`}
+                    >
+                      Downline
+                    </button>
+                  </div>
+                </div>
               </div>
               <div className="overflow-x-auto">
                 <table className="min-w-full">
                   <thead>
                     <tr className="border-b theme-border-primary text-left theme-bg-tertiary">
                       <th className="px-6 py-3 text-xs font-medium theme-text-secondary uppercase tracking-wider">
-                        Member
+                        Rep Info
                       </th>
                       <th className="px-6 py-3 text-xs font-medium theme-text-secondary uppercase tracking-wider">
                         Role
                       </th>
                       <th className="px-6 py-3 text-xs font-medium theme-text-secondary uppercase tracking-wider">
+                        MR
+                      </th>
+                      <th className="px-6 py-3 text-xs font-medium theme-text-secondary uppercase tracking-wider">
                         Status
                       </th>
                       <th className="px-6 py-3 text-xs font-medium theme-text-secondary uppercase tracking-wider">
-                        Performance
+                        YTD kW Sold
                       </th>
                       <th className="px-6 py-3 text-xs font-medium theme-text-secondary uppercase tracking-wider text-right">
                         Actions
@@ -269,111 +643,59 @@ export default function Team() {
                     </tr>
                   </thead>
                   <tbody className="divide-y theme-border-secondary">
-                    <tr className="hover:theme-bg-quaternary">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                            <span className="text-sm font-medium text-gray-700">JD</span>
+                    {getFilteredTeamMembers().map((member, index) => (
+                      <tr key={index} className="hover:theme-bg-quaternary">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="text-sm font-medium theme-text-primary mr-2">{member.name}</div>
+                            <button
+                              onClick={() => handleShowRepInfo({
+                                name: member.name,
+                                email: member.email,
+                                phone: member.phone
+                              })}
+                              className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors duration-200"
+                              title="View contact info"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 theme-text-secondary hover:theme-text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                            </button>
                           </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium theme-text-primary">John Doe</div>
-                            <div className="text-sm theme-text-secondary">john.doe@example.com</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            member.role === 'Manager' 
+                              ? 'bg-purple-100 text-purple-800'
+                              : 'bg-blue-100 text-blue-800'
+                          }`}>
+                            {member.role}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm theme-text-primary">{member.mr}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            member.status === 'Active'
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {member.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm theme-text-primary">
+                          <div className="text-center">
+                            <span className="font-semibold text-lg">{member.performance.toFixed(1)}</span>
+                            <span className="text-xs theme-text-secondary ml-1">kW</span>
                           </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">
-                          Manager
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                          Active
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm theme-text-primary">
-                        <div className="flex items-center">
-                          <div className="w-16 bg-gray-200 rounded-full h-2 mr-2">
-                            <div className="bg-green-500 h-2 rounded-full" style={{ width: '85%' }}></div>
-                          </div>
-                          <span>85%</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button className="text-blue-600 hover:text-blue-900 mr-3">Edit</button>
-                        <button className="text-red-600 hover:text-red-900">Remove</button>
-                      </td>
-                    </tr>
-                    <tr className="hover:theme-bg-quaternary">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                            <span className="text-sm font-medium text-gray-700">SJ</span>
-                          </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium theme-text-primary">Sarah Johnson</div>
-                            <div className="text-sm theme-text-secondary">sarah.j@example.com</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                          Sales Rep
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                          Active
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm theme-text-primary">
-                        <div className="flex items-center">
-                          <div className="w-16 bg-gray-200 rounded-full h-2 mr-2">
-                            <div className="bg-blue-500 h-2 rounded-full" style={{ width: '72%' }}></div>
-                          </div>
-                          <span>72%</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button className="text-blue-600 hover:text-blue-900 mr-3">Edit</button>
-                        <button className="text-red-600 hover:text-red-900">Remove</button>
-                      </td>
-                    </tr>
-                    <tr className="hover:theme-bg-quaternary">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                            <span className="text-sm font-medium text-gray-700">MW</span>
-                          </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium theme-text-primary">Mike Wilson</div>
-                            <div className="text-sm theme-text-secondary">mike.w@example.com</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                          Sales Rep
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                          Pending
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm theme-text-primary">
-                        <div className="flex items-center">
-                          <div className="w-16 bg-gray-200 rounded-full h-2 mr-2">
-                            <div className="bg-yellow-500 h-2 rounded-full" style={{ width: '45%' }}></div>
-                          </div>
-                          <span>45%</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button className="text-blue-600 hover:text-blue-900 mr-3">Edit</button>
-                        <button className="text-red-600 hover:text-red-900">Remove</button>
-                      </td>
-                    </tr>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <button className="text-blue-600 hover:text-blue-900 mr-3">Edit</button>
+                          <button className="text-red-600 hover:text-red-900">Remove</button>
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
@@ -381,6 +703,77 @@ export default function Team() {
           </main>
         </div>
       </div>
+
+      {/* Rep Info Modal */}
+      {showRepInfo && selectedRepInfo && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 theme-bg-primary bg-opacity-75">
+          <div className="theme-bg-tertiary rounded-lg shadow-lg max-w-md w-full mx-4">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold theme-text-primary">Contact Information</h2>
+                <button
+                  onClick={() => setShowRepInfo(false)}
+                  className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors duration-200"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 theme-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                {/* Rep Name */}
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-cyan-100 rounded-full flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-cyan-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-sm theme-text-secondary">Name</p>
+                    <p className="font-medium theme-text-primary">{selectedRepInfo.name}</p>
+                  </div>
+                </div>
+
+                {/* Phone Number */}
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-sm theme-text-secondary">Phone</p>
+                    <p className="font-medium theme-text-primary">{selectedRepInfo.phone}</p>
+                  </div>
+                </div>
+
+                {/* Email Address */}
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-sm theme-text-secondary">Email</p>
+                    <p className="font-medium theme-text-primary">{selectedRepInfo.email}</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="border-t theme-border-primary p-4 flex justify-end mt-6">
+                <button
+                  onClick={() => setShowRepInfo(false)}
+                  className="px-4 py-2 theme-bg-quaternary theme-text-primary theme-border-primary border rounded-md hover:theme-bg-tertiary"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </ClientOnly>
   );
 } 

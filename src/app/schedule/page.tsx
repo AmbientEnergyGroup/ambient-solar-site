@@ -11,23 +11,17 @@ import Sidebar from "@/components/Sidebar";
 import { useTheme } from "@/lib/hooks/useTheme";
 import ClientOnly from "@/components/ClientOnly";
 import CloserAssignmentModal from "@/components/CloserAssignmentModal";
+import { 
+  getUserSets, 
+  getCloserSets, 
+  subscribeToUserSets, 
+  subscribeToCloserSets,
+  CustomerSet 
+} from "@/lib/firebase/firebaseUtils";
 
-// Define the Set interface 
-interface Set {
-  id: string;
-  customerName: string;
-  address: string;
-  phoneNumber: string;
-  appointmentDate: string;
-  appointmentTime: string;
-  isSpanishSpeaker: boolean;
-  notes: string;
-  createdAt: string;
-  status?: "active" | "inactive" | "not_closed";
-  closerId?: string; // ID of assigned closer
-  closerName?: string; // Name of assigned closer
-  utilityBill?: string; // Utility bill file data URL or path
-  userId?: string; // ID of user who created the set
+// Use CustomerSet from firebaseUtils, but extend status to include all possible values
+interface ScheduleSet extends Omit<CustomerSet, 'status'> {
+  status?: "active" | "not_closed" | "closed" | "assigned" | "inactive";
 }
 
 // Define the Project interface (simplified version)
@@ -63,16 +57,16 @@ export default function Schedule() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [currentMonthTimestamp, setCurrentMonthTimestamp] = useState(0); // 0 as initial value
   const [selectedDateTimestamp, setSelectedDateTimestamp] = useState<number | null>(null);
-  const [sets, setSets] = useState<Set[]>([]);
+  const [sets, setSets] = useState<ScheduleSet[]>([]);
   const [closers, setClosers] = useState<{id: string, name: string}[]>([]);
   const [selectedCloser, setSelectedCloser] = useState<string>("all");
   const [showDocumentsModal, setShowDocumentsModal] = useState(false);
-  const [selectedSetDocuments, setSelectedSetDocuments] = useState<Set | null>(null);
+  const [selectedSetDocuments, setSelectedSetDocuments] = useState<ScheduleSet | null>(null);
   const [isClient, setIsClient] = useState(false);
   
   // Closer assignment modal state
   const [showCloserAssignmentModal, setShowCloserAssignmentModal] = useState(false);
-  const [selectedSetForAssignment, setSelectedSetForAssignment] = useState<Set | null>(null);
+  const [selectedSetForAssignment, setSelectedSetForAssignment] = useState<ScheduleSet | null>(null);
   
   // Computed Date objects from timestamps (only used client-side)
   const currentMonth = isClient ? new Date(currentMonthTimestamp) : new Date(0);
@@ -119,7 +113,7 @@ export default function Schedule() {
     return userData?.role === 'setter' || user?.role === 'setter';
   };
 
-  const canViewFullDetails = (set: Set) => {
+  const canViewFullDetails = (set: ScheduleSet) => {
     // Managers can view all details
     if (isManager()) return true;
     
@@ -132,7 +126,7 @@ export default function Schedule() {
     return false;
   };
 
-  const canCompleteSet = (set: Set) => {
+  const canCompleteSet = (set: ScheduleSet) => {
     // Allow closers to complete their assigned sets
     if (isCloser() && set.closerId === user?.uid) {
       return true;
@@ -202,26 +196,30 @@ export default function Schedule() {
     // Update the date to current date on client-side
     setCurrentMonthTimestamp(new Date().getTime());
     
-    // Load sets from localStorage
-    const loadSets = () => {
-      if (typeof window !== 'undefined') {
-        const savedSets = localStorage.getItem('customerSets');
-        console.log('Schedule page: Loading sets from localStorage:', savedSets);
-        if (savedSets) {
-          try {
-            const parsedSets = JSON.parse(savedSets);
-            console.log('Schedule page: Parsed sets:', parsedSets);
-            setSets(parsedSets);
-          } catch (e) {
-            console.error('Error loading sets:', e);
-          }
-        } else {
-          console.log('Schedule page: No sets found in localStorage');
-        }
+    // Set up real-time subscription to user's sets
+    if (user?.uid) {
+      console.log('Schedule page: Setting up real-time subscription for user:', user.uid);
+      
+      let unsubscribe: (() => void) | null = null;
+      
+      if (isCloser()) {
+        // Closers see their assigned sets
+        unsubscribe = subscribeToCloserSets(user.uid, (assignedSets) => {
+          console.log('Schedule page: Received assigned sets from Firestore:', assignedSets.length);
+          setSets(assignedSets);
+        });
+      } else {
+        // Setters see their own sets
+        unsubscribe = subscribeToUserSets(user.uid, (userSets) => {
+          console.log('Schedule page: Received user sets from Firestore:', userSets.length);
+          setSets(userSets);
+        });
       }
-    };
-
-    loadSets();
+      
+      return () => {
+        if (unsubscribe) unsubscribe();
+      };
+    }
     console.log('Schedule page: Client-side initialization complete');
   }, []);
 
@@ -372,13 +370,13 @@ export default function Schedule() {
   };
 
   // Handle viewing documents
-  const handleViewDocuments = (set: Set) => {
+  const handleViewDocuments = (set: ScheduleSet) => {
     setSelectedSetDocuments(set);
     setShowDocumentsModal(true);
   };
 
   // Handle closer assignment
-  const handleAssignCloser = (set: Set) => {
+  const handleAssignCloser = (set: ScheduleSet) => {
     setSelectedSetForAssignment(set);
     setShowCloserAssignmentModal(true);
   };
@@ -578,6 +576,8 @@ export default function Schedule() {
         id: setToMove.id, // Use the original set ID
         customerName: closeFormData.customerName,
         address: setToMove.address,
+        phoneNumber: setToMove.phoneNumber, // Transfer phone number from set
+        email: setToMove.email, // Transfer email from set
         installDate: closeFormData.installDate || undefined,
         paymentDate: ptoPaymentDate || calculatedPaymentDate,
         siteSurveyDate: closeFormData.siteSurveyDate,
@@ -709,7 +709,7 @@ export default function Schedule() {
       });
       
       // Show confirmation with commission details
-      alert(`Set moved to projects successfully! This is deal #${dealNumber} with a commission of $${paymentAmount} (at $${commissionRate}/kW).`);
+              alert(`Congratulations on the deal!`);
       
       // Important: Force a refresh of the projects page data when user is redirected 
       localStorage.setItem('forceProjectsRefresh', 'true');
@@ -788,10 +788,10 @@ export default function Schedule() {
             <header className="standard-header flex-shrink-0">
               <div className="standard-header-content">
                 <div className="flex items-center mb-4">
-                  <button 
-                    onClick={() => setSidebarOpen(!sidebarOpen)} 
-                    className="theme-text-primary hover:opacity-70 transition-opacity p-1"
-                  >
+                              <button 
+              onClick={() => setSidebarOpen(!sidebarOpen)} 
+              className="text-cyan-500 hover:text-cyan-600 transition-colors p-1"
+            >
                     {sidebarOpen ? (
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
@@ -883,6 +883,30 @@ export default function Schedule() {
                     >
                       <ChevronRight className="h-5 w-5" />
                     </button>
+                  </div>
+                </div>
+                
+                {/* Information note */}
+                <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0">
+                      <svg className="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <div className="ml-3">
+                      <h3 className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                        Schedule Integration
+                      </h3>
+                      <div className="mt-2 text-sm text-blue-700 dark:text-blue-300">
+                        <p>
+                          <strong>This schedule shows:</strong> Your personal appointments and sets assigned to you from Closer Core.
+                        </p>
+                        <p className="mt-1">
+                          <strong>For closers:</strong> Sets you accept in Closer Core will automatically appear here in your schedule.
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
                 
@@ -1473,7 +1497,7 @@ export default function Schedule() {
           setShowCloserAssignmentModal(false);
           setSelectedSetForAssignment(null);
         }}
-        set={selectedSetForAssignment}
+        set={selectedSetForAssignment as any}
         onAssignCloser={handleConfirmCloserAssignment}
         userRegion={userData?.region}
       />

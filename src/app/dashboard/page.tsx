@@ -290,7 +290,7 @@ export default function Dashboard() {
             {/* Centered logo when sidebar is closed */}
             {!sidebarOpen && (
               <div className="header-logo-center">
-                <AmbientLogo theme={darkMode ? 'dark' : 'light'} size="md" />
+                                       <AmbientLogo theme={darkMode ? 'dark' : 'light'} size="xl" />
               </div>
             )}
           </div>

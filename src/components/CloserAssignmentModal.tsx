@@ -15,7 +15,7 @@ interface Set {
   isSpanishSpeaker: boolean;
   notes: string;
   createdAt: string;
-  status?: "active" | "inactive" | "not_closed";
+  status?: "active" | "inactive" | "not_closed" | "closed" | "assigned";
   closerId?: string;
   closerName?: string;
   utilityBill?: string;

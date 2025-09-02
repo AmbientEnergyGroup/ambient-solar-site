@@ -9,7 +9,10 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['var(--font-inter)', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-orbitron)', 'Orbitron', 'monospace'],
+        orbitron: ['var(--font-orbitron)', 'Orbitron', 'monospace'],
+        futuristic: ['var(--font-orbitron)', 'Orbitron', 'monospace'],
+        inter: ['var(--font-inter)', 'system-ui', 'sans-serif'],
       },
       colors: {
         'gray-750': '#1e2533',

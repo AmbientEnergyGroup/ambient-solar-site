@@ -1,6 +1,6 @@
 import "./globals.css";
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Inter, Orbitron } from 'next/font/google';
 import { AuthProvider } from "@/lib/contexts/AuthContext";
 import PageTransition from "@/components/PageTransition";
 import NavigationOptimizer from "@/components/NavigationOptimizer";
@@ -12,6 +12,15 @@ const inter = Inter({
   display: 'swap',
   variable: '--font-inter',
   weight: ["300", "400", "500", "600", "700", "800"],
+  preload: true,
+});
+
+// Use Orbitron font for futuristic/geometric text
+const orbitron = Orbitron({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-orbitron',
+  weight: ["400", "700", "900"],
   preload: true,
 });
 
@@ -41,7 +50,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} dark`}>
+    <html lang="en" className={`${inter.variable} ${orbitron.variable} dark`}>
       <head>
         {/* Preload critical resources */}
         <link rel="preload" href="/images/ambient-logo-teal.jpeg" as="image" />
@@ -50,7 +59,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://firebase.googleapis.com" />
         <link rel="preconnect" href="https://maps.googleapis.com" />
       </head>
-      <body className="min-h-screen bg-gray-700 font-sans antialiased">
+      <body className="min-h-screen bg-gray-700 font-orbitron antialiased">
         {/* Performance Optimizer - runs in background */}
         <PerformanceOptimizer />
         

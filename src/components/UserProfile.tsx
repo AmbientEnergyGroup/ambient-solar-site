@@ -48,7 +48,9 @@ export default function UserProfile() {
     theme: 'auto' as 'light' | 'dark' | 'auto',
     language: 'en',
     team: 'Team A' as 'Team A' | 'Team B' | 'Team C' | 'Team D',
-    region: 'Region A' as 'Region A' | 'Region B' | 'Region C' | 'Region D'
+    region: 'Region A' as 'Region A' | 'Region B' | 'Region C' | 'Region D',
+    role: 'setter' as 'setter' | 'closer' | 'admin',
+    managerRole: 'rep' as 'rep' | 'manager' | 'admin'
   });
 
   // Check if current user is the support admin
@@ -60,6 +62,17 @@ export default function UserProfile() {
   
   const canEditProfile = isOwnerAdmin || isAdmin || isOfficeAdmin || isRegionAdmin || isManager;
   const canEditTeamRegion = isOwnerAdmin || isAdmin || isOfficeAdmin || isRegionAdmin;
+  
+  // Function to determine if user can edit sales role
+  const canEditSalesRole = () => {
+    // If no sales role is set yet, only managers can set it during onboarding
+    if (!profileData.role || profileData.role === 'Not set') {
+      return isManager || isAdmin || isOfficeAdmin || isRegionAdmin || isOwnerAdmin;
+    }
+    
+    // If sales role is already set, only admins for manager roles can change it
+    return isOwnerAdmin || isAdmin || isOfficeAdmin;
+  };
 
 
   
@@ -83,7 +96,9 @@ export default function UserProfile() {
             theme: profileData.settings?.theme || 'auto',
             language: profileData.settings?.language || 'en',
             team: profileData.team || 'Team A',
-            region: profileData.region || 'Region A'
+            region: profileData.region || 'Region A',
+            role: profileData.role || 'setter',
+            managerRole: profileData.managerRole || 'rep'
           });
           console.log('✅ Form data set from localStorage');
         } catch (error) {
@@ -98,7 +113,9 @@ export default function UserProfile() {
               theme: userData.settings?.theme || 'auto',
               language: userData.settings?.language || 'en',
               team: userData.team || 'Team A',
-              region: userData.region || 'Region A'
+              region: userData.region || 'Region A',
+              role: (userData.role === 'setter' || userData.role === 'closer' || userData.role === 'admin') ? userData.role : 'setter',
+              managerRole: userData.managerRole || 'rep'
             });
           } else {
             // Fallback to user data
@@ -109,7 +126,9 @@ export default function UserProfile() {
               theme: 'auto',
               language: 'en',
               team: 'Team A',
-              region: 'Region A'
+              region: 'Region A',
+              role: 'setter',
+              managerRole: 'rep'
             });
           }
         }
@@ -124,19 +143,23 @@ export default function UserProfile() {
             theme: userData.settings?.theme || 'auto',
             language: userData.settings?.language || 'en',
             team: userData.team || 'Team A',
-            region: userData.region || 'Region A'
+            region: userData.region || 'Region A',
+            role: (userData.role === 'setter' || userData.role === 'closer' || userData.role === 'admin') ? userData.role : 'setter',
+            managerRole: 'rep'
           });
         } else {
           // Fallback to user data
-          setFormData({
-            displayName: user.displayName || user.email?.split('@')[0] || '',
-            phoneNumber: user.phoneNumber || '',
-            notifications: true,
-            theme: 'auto',
-            language: 'en',
-            team: 'Team A',
-            region: 'Region A'
-          });
+                      setFormData({
+              displayName: user.displayName || user.email?.split('@')[0] || '',
+              phoneNumber: user.phoneNumber || '',
+              notifications: true,
+              theme: 'auto',
+              language: 'en',
+              team: 'Team A',
+              region: 'Region A',
+              role: 'setter',
+              managerRole: 'rep'
+            });
         }
       }
     }
@@ -386,19 +409,7 @@ export default function UserProfile() {
             
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email
-              </label>
-              <input
-                type="email"
-                value={user.email || ''}
-                disabled
-                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Display Name
+                Name
               </label>
               <input
                 type="text"
@@ -406,6 +417,18 @@ export default function UserProfile() {
                 onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
                 disabled={!isEditing}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md disabled:bg-gray-50 text-gray-900"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Email
+              </label>
+              <input
+                type="email"
+                value={user.email || ''}
+                disabled
+                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700"
               />
             </div>
 
@@ -425,145 +448,128 @@ export default function UserProfile() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Role
+                Sales Role
               </label>
-              <div className="flex items-center space-x-2">
-                <input
-                  type="text"
-                  value={profileData.role || 'Not set'}
-                  disabled
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700"
-                />
-                {isOwnerAdmin && (
-                  <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded">
-                    Owner Admin
-                  </span>
-                )}
-                {isOfficeAdmin && (
-                  <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                    Office Admin
-                  </span>
-                )}
-                {isRegionAdmin && (
-                  <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
-                    Region Admin
-                  </span>
-                )}
-              </div>
+              <select
+                value={isEditing ? formData.role : (profileData.role || 'setter')}
+                onChange={(e) => setFormData({ ...formData, role: e.target.value as 'setter' | 'closer' | 'admin' })}
+                disabled={!isEditing || !canEditSalesRole()}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md disabled:bg-gray-50 text-gray-900"
+              >
+                <option value="setter">Setter</option>
+                <option value="closer">Closer</option>
+                <option value="admin">Admin</option>
+              </select>
+              {!canEditSalesRole() && (
+                <p className="text-xs text-gray-500 mt-1">
+                  {!profileData.role || profileData.role === 'Not set' 
+                    ? 'Sales Role must be set by a manager during onboarding'
+                    : 'Sales Role can only be changed by admins for manager roles'
+                  }
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Manager Role
+              </label>
+              <select
+                value={isEditing ? formData.managerRole : (profileData.managerRole || 'rep')}
+                onChange={(e) => setFormData({ ...formData, managerRole: e.target.value as 'rep' | 'manager' | 'admin' })}
+                disabled={!isEditing}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md disabled:bg-gray-50 text-gray-900"
+              >
+                <option value="rep">Rep</option>
+                <option value="manager">Manager</option>
+                <option value="admin">Admin</option>
+              </select>
             </div>
           </div>
 
-          {/* Statistics and Team/Region */}
+          {/* Team and Region Section */}
           <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-gray-800">Statistics</h2>
+            <h2 className="text-xl font-semibold text-gray-800">Team & Region</h2>
             
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <div className="text-2xl font-bold text-blue-600">
-                  {profileData.dealCount || 0}
+            {/* Current Assignment Display */}
+            <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="text-sm font-medium text-gray-600">Current Team:</span>
+                  <div className="text-lg font-semibold text-gray-900">{profileData.team || 'Team A'}</div>
                 </div>
-                <div className="text-sm text-blue-800">Total Deals</div>
-              </div>
-              
-              <div className="bg-green-50 p-4 rounded-lg">
-                <div className="text-2xl font-bold text-green-600">
-                  ${(profileData.totalCommission || 0).toLocaleString()}
+                <div>
+                  <span className="text-sm font-medium text-gray-600">Current Region:</span>
+                  <div className="text-lg font-semibold text-gray-900">{profileData.region || 'Region A'}</div>
                 </div>
-                <div className="text-sm text-green-800">Total Commission</div>
               </div>
             </div>
-
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="text-sm text-gray-600">Member since</div>
-              <div className="font-medium">
-                {profileData.createdAt ? new Date(profileData.createdAt).toLocaleDateString() : 'N/A'}
-              </div>
-            </div>
-
-            {/* Team and Region Section */}
-            <div className="mt-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-3">Team & Region</h3>
               
-              {/* Current Assignment Display */}
-              <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <span className="text-sm font-medium text-gray-600">Current Team:</span>
-                    <div className="text-lg font-semibold text-gray-900">{profileData.team || 'Team A'}</div>
-                  </div>
-                  <div>
-                    <span className="text-sm font-medium text-gray-600">Current Region:</span>
-                    <div className="text-lg font-semibold text-gray-900">{profileData.region || 'Region A'}</div>
-                  </div>
-                </div>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Team
+                </label>
+                <select
+                  value={isEditing ? formData.team : (profileData.team || 'Team A')}
+                  onChange={(e) => setFormData({ ...formData, team: e.target.value as 'Team A' | 'Team B' | 'Team C' | 'Team D' })}
+                  disabled={!isEditing || !canEditTeamRegion}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md disabled:bg-gray-50 text-gray-900"
+                >
+                  {profileData.region === 'Region A' && (
+                    <>
+                      <option value="Team A">Team A</option>
+                      <option value="Team B">Team B</option>
+                    </>
+                  )}
+                  {profileData.region === 'Region B' && (
+                    <>
+                      <option value="Team C">Team C</option>
+                      <option value="Team D">Team D</option>
+                    </>
+                  )}
+                  {profileData.region === 'Region C' && (
+                    <>
+                      <option value="Team A">Team A</option>
+                      <option value="Team B">Team B</option>
+                    </>
+                  )}
+                  {profileData.region === 'Region D' && (
+                    <>
+                      <option value="Team C">Team C</option>
+                      <option value="Team D">Team D</option>
+                    </>
+                  )}
+                  {!profileData.region && (
+                    <>
+                      <option value="Team A">Team A</option>
+                      <option value="Team B">Team B</option>
+                    </>
+                  )}
+                </select>
+                {!canEditTeamRegion && (
+                  <p className="text-xs text-gray-500 mt-1">Only managers can change team assignment</p>
+                )}
               </div>
-              
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Team
-                  </label>
-                  <select
-                    value={isEditing ? formData.team : (profileData.team || 'Team A')}
-                    onChange={(e) => setFormData({ ...formData, team: e.target.value as 'Team A' | 'Team B' | 'Team C' | 'Team D' })}
-                    disabled={!isEditing || !canEditTeamRegion}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md disabled:bg-gray-50 text-gray-900"
-                  >
-                    {profileData.region === 'Region A' && (
-                      <>
-                        <option value="Team A">Team A</option>
-                        <option value="Team B">Team B</option>
-                      </>
-                    )}
-                    {profileData.region === 'Region B' && (
-                      <>
-                        <option value="Team C">Team C</option>
-                        <option value="Team D">Team D</option>
-                      </>
-                    )}
-                    {profileData.region === 'Region C' && (
-                      <>
-                        <option value="Team A">Team A</option>
-                        <option value="Team B">Team B</option>
-                      </>
-                    )}
-                    {profileData.region === 'Region D' && (
-                      <>
-                        <option value="Team C">Team C</option>
-                        <option value="Team D">Team D</option>
-                      </>
-                    )}
-                    {!profileData.region && (
-                      <>
-                        <option value="Team A">Team A</option>
-                        <option value="Team B">Team B</option>
-                      </>
-                    )}
-                  </select>
-                  {!canEditTeamRegion && (
-                    <p className="text-xs text-gray-500 mt-1">Only managers can change team assignment</p>
-                  )}
-                </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Region
-                  </label>
-                  <select
-                    value={isEditing ? formData.region : (profileData.region || 'Region A')}
-                    onChange={(e) => setFormData({ ...formData, region: e.target.value as 'Region A' | 'Region B' | 'Region C' | 'Region D' })}
-                    disabled={!isEditing || !canEditTeamRegion}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md disabled:bg-gray-50 text-gray-900"
-                  >
-                    <option value="Region A">Region A</option>
-                    <option value="Region B">Region B</option>
-                    <option value="Region C">Region C</option>
-                    <option value="Region D">Region D</option>
-                  </select>
-                  {!canEditTeamRegion && (
-                    <p className="text-xs text-gray-500 mt-1">Only managers can change region assignment</p>
-                  )}
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Region
+                </label>
+                <select
+                  value={isEditing ? formData.region : (profileData.region || 'Region A')}
+                  onChange={(e) => setFormData({ ...formData, region: e.target.value as 'Region A' | 'Region B' | 'Region C' | 'Region D' })}
+                  disabled={!isEditing || !canEditTeamRegion}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md disabled:bg-gray-50 text-gray-900"
+                >
+                  <option value="Region A">Region A</option>
+                  <option value="Region B">Region B</option>
+                  <option value="Region C">Region C</option>
+                  <option value="Region D">Region D</option>
+                </select>
+                {!canEditTeamRegion && (
+                  <p className="text-xs text-gray-500 mt-1">Only managers can change region assignment</p>
+                )}
               </div>
             </div>
           </div>

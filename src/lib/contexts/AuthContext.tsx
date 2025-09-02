@@ -89,6 +89,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isDevelopment = process.env.NODE_ENV === 'development' || 
                        (typeof window !== 'undefined' && window.location.hostname === 'localhost');
 
+  console.log('🔍 Development mode check:', {
+    NODE_ENV: process.env.NODE_ENV,
+    hostname: typeof window !== 'undefined' ? window.location.hostname : 'server',
+    isDevelopment
+  });
+
   // Optimized auth state change handler
   const handleAuthStateChange = useCallback(async (firebaseUser: any) => {
     console.log('🔄 Auth state changed:', firebaseUser ? 'User logged in' : 'User logged out');
@@ -207,6 +213,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // In development mode, bypass Firebase auth and create a fake user
     if (isDevelopment) {
       console.log('🚀 Development mode detected - bypassing Firebase auth');
+      console.log('🔍 Creating fake user...');
       
       const fakeUser: ExtendedUser = {
         uid: 'dev_user_123',
@@ -229,27 +236,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         providerId: 'password',
       };
       
-              const fakeUserData: UserData = {
-          id: 'dev_user_123',
-          role: 'admin',
-          displayName: 'Development User',
-          email: 'dev@ambient.local',
-          phoneNumber: '+1234567890',
-          team: 'Team A',
-          region: 'Region A',
-          payType: 'Pro',
-          createdAt: new Date().toISOString(),
-          active: true,
-          dealCount: 0,
-          totalCommission: 0,
-          recentProjects: [],
-          commissionPayments: [],
-          settings: {
-            notifications: true,
-            theme: 'auto',
-            language: 'en'
-          }
-        };
+      const fakeUserData: UserData = {
+        id: 'dev_user_123',
+        role: 'admin',
+        displayName: 'Development User',
+        email: 'dev@ambient.local',
+        phoneNumber: '+1234567890',
+        team: 'Team A',
+        region: 'Region A',
+        payType: 'Pro',
+        createdAt: new Date().toISOString(),
+        active: true,
+        dealCount: 0,
+        totalCommission: 0,
+        recentProjects: [],
+        commissionPayments: [],
+        settings: {
+          notifications: true,
+          theme: 'auto',
+          language: 'en'
+        }
+      };
       
       setUser(fakeUser);
       setUserData(fakeUserData);

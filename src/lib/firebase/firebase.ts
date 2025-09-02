@@ -1,36 +1,45 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { getDatabase } from "firebase/database";
 import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "demo-api-key",
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "demo-project.firebaseapp.com",
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "demo-project",
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "demo-project.appspot.com",
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "123456789",
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "1:123456789:web:abcdef",
 };
 
 // Initialize Firebase only once with lazy loading
 let app: any;
 let auth: any;
-let db: any;
+let database: any;
 let storage: any;
 
 // Lazy initialization function
 const initializeFirebase = () => {
   if (!app) {
+    // Check if we have real Firebase config or just demo values
+    const hasRealConfig = process.env.NEXT_PUBLIC_FIREBASE_API_KEY && 
+                         process.env.NEXT_PUBLIC_FIREBASE_API_KEY !== "your_firebase_api_key_here";
+    
+    if (!hasRealConfig) {
+      console.warn('⚠️ Firebase not configured. Using demo values. Please set up Firebase environment variables.');
+      console.warn('📖 See FIREBASE_SETUP_GUIDE.md for setup instructions.');
+    }
+    
     if (!getApps().length) {
       app = initializeApp(firebaseConfig);
     } else {
       app = getApp();
     }
     auth = getAuth(app);
-    db = getFirestore(app);
+    database = getDatabase(app);
     storage = getStorage(app);
   }
-  return { app, auth, db, storage };
+  return { app, auth, database, storage };
 };
 
 // Initialize immediately but don't block
@@ -59,8 +68,8 @@ export const getFirebaseAuth = () => {
 };
 
 export const getFirebaseDB = () => {
-  if (!db) initializeFirebase();
-  return db;
+  if (!database) initializeFirebase();
+  return database;
 };
 
 export const getFirebaseStorage = () => {
@@ -69,4 +78,4 @@ export const getFirebaseStorage = () => {
 };
 
 // Legacy exports for backward compatibility
-export { app, auth, db, storage };
+export { app, auth, database as db, storage };

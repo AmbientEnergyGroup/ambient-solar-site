@@ -117,7 +117,7 @@ export default function RecruitingForm() {
           <div className="px-6 py-4 flex items-center">
             <button 
               onClick={() => setSidebarOpen(!sidebarOpen)} 
-              className="theme-text-primary hover:opacity-70 transition-opacity p-1"
+              className="text-cyan-500 hover:text-cyan-600 transition-colors p-1"
             >
               {sidebarOpen ? (
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
