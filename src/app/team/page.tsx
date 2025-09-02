@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/contexts/AuthContext";
+import { updateUserActive } from "@/lib/firebase/firebaseUtils";
 import { Users, LogOut, Home, Search, Plus, Filter, MapPin } from "lucide-react";
 import AmbientLogo from "@/components/AmbientLogo";
 import Sidebar from "@/components/Sidebar";
@@ -37,6 +38,13 @@ export default function Team() {
   const [loadingTimeout, setLoadingTimeout] = useState(false);
   const [repPerformance, setRepPerformance] = useState<{[key: string]: number}>({});
   const [teamFilter, setTeamFilter] = useState<'direct' | 'downline'>('direct');
+  const [statusFilter, setStatusFilter] = useState<'active' | 'inactive' | 'all'>('all');
+  const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
+  const [memberToDeactivate, setMemberToDeactivate] = useState<{
+    id: string;
+    name: string;
+    email: string;
+  } | null>(null);
   const WEEKLY_GOAL_KW = 200;
   const { darkMode } = useTheme();
   
@@ -234,57 +242,132 @@ export default function Team() {
     setShowRepInfo(true);
   };
 
-  // Filter team members based on Direct vs Downline
+  // Handle deactivate member
+  const handleDeactivateMember = (member: { id: string; name: string; email: string }) => {
+    setMemberToDeactivate(member);
+    setShowDeactivateConfirm(true);
+  };
+
+  // Confirm deactivation
+  const confirmDeactivation = async () => {
+    if (!memberToDeactivate) return;
+
+    try {
+      // In a real app, you would call your API to deactivate the user
+      // For now, we'll simulate the deactivation
+      console.log('Deactivating user:', memberToDeactivate);
+      
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Show success message
+      alert(`Account for ${memberToDeactivate.name} has been deactivated successfully.`);
+      
+      // Close confirmation dialog
+      setShowDeactivateConfirm(false);
+      setMemberToDeactivate(null);
+      
+    } catch (error) {
+      console.error('Error deactivating user:', error);
+      alert('Failed to deactivate account. Please try again.');
+    }
+  };
+
+  // Filter team members based on Direct vs Downline and Active vs Inactive
   const getFilteredTeamMembers = () => {
     // Sample team data - in a real app, this would come from your database
     const allTeamMembers = [
       {
+        id: '1',
         name: 'John Doe',
         email: 'john.doe@example.com',
         phone: '(555) 123-4567',
         role: 'Manager',
         mr: 'Development User', // Recruited by current user
         status: 'Active',
+        isActive: true,
         performance: repPerformance['John Doe'] || 0,
         isDirect: true // Direct report - recruited by current user
       },
       {
+        id: '2',
         name: 'Sarah Johnson',
         email: 'sarah.j@example.com',
         phone: '(555) 234-5678',
         role: 'Sales Rep',
         mr: 'Development User', // Recruited by current user
         status: 'Active',
+        isActive: true,
         performance: repPerformance['Sarah Johnson'] || 0,
         isDirect: true // Direct report - recruited by current user
       },
       {
+        id: '3',
         name: 'Mike Wilson',
         email: 'mike.w@example.com',
         phone: '(555) 345-6789',
         role: 'Sales Rep',
         mr: 'John Doe', // Recruited by John Doe
         status: 'Pending',
+        isActive: true,
         performance: repPerformance['Mike Wilson'] || 0,
         isDirect: false // Downline - recruited by John Doe, not current user
       },
       {
+        id: '4',
         name: 'Emily Chen',
         email: 'emily.c@example.com',
         phone: '(555) 456-7890',
         role: 'Sales Rep',
         mr: 'Sarah Johnson', // Recruited by Sarah Johnson
         status: 'Active',
+        isActive: true,
         performance: repPerformance['Emily Chen'] || 0,
         isDirect: false // Downline - recruited by Sarah Johnson, not current user
+      },
+      {
+        id: '5',
+        name: 'Tom Rodriguez',
+        email: 'tom.r@example.com',
+        phone: '(555) 567-8901',
+        role: 'Sales Rep',
+        mr: 'Development User', // Recruited by current user
+        status: 'Inactive',
+        isActive: false,
+        performance: repPerformance['Tom Rodriguez'] || 0,
+        isDirect: true // Direct report - recruited by current user
+      },
+      {
+        id: '6',
+        name: 'Lisa Park',
+        email: 'lisa.p@example.com',
+        phone: '(555) 678-9012',
+        role: 'Sales Rep',
+        mr: 'John Doe', // Recruited by John Doe
+        status: 'Inactive',
+        isActive: false,
+        performance: repPerformance['Lisa Park'] || 0,
+        isDirect: false // Downline - recruited by John Doe, not current user
       }
     ];
 
+    let filteredMembers = allTeamMembers;
+
+    // Apply team filter (direct vs downline)
     if (teamFilter === 'direct') {
-      return allTeamMembers.filter(member => member.isDirect);
-    } else {
-      return allTeamMembers; // Show all team members (direct + downline)
+      filteredMembers = filteredMembers.filter(member => member.isDirect);
     }
+    // If 'downline', show all members (no additional filtering needed)
+
+    // Apply status filter (active vs inactive)
+    if (statusFilter === 'active') {
+      filteredMembers = filteredMembers.filter(member => member.isActive);
+    } else if (statusFilter === 'inactive') {
+      filteredMembers = filteredMembers.filter(member => !member.isActive);
+    }
+    // If 'all', show all members (no additional filtering needed)
+
+    return filteredMembers;
   };
 
   // Get list of managers for the Add Rep form
@@ -595,26 +678,63 @@ export default function Team() {
                   
                   {/* Filter buttons */}
                   <div className="flex items-center space-x-2">
-                    <button
-                      onClick={() => setTeamFilter('direct')}
-                      className={`px-3 py-1 text-sm font-medium rounded-md transition-colors duration-200 ${
-                        teamFilter === 'direct'
-                          ? 'bg-cyan-500 text-white'
-                          : 'theme-bg-quaternary theme-text-primary hover:theme-bg-tertiary'
-                      }`}
-                    >
-                      Direct
-                    </button>
-                    <button
-                      onClick={() => setTeamFilter('downline')}
-                      className={`px-3 py-1 text-sm font-medium rounded-md transition-colors duration-200 ${
-                        teamFilter === 'downline'
-                          ? 'bg-cyan-500 text-white'
-                          : 'theme-bg-quaternary theme-text-primary hover:theme-bg-tertiary'
-                      }`}
-                    >
-                      Downline
-                    </button>
+                    {/* Team Filter */}
+                    <div className="flex items-center space-x-1">
+                      <button
+                        onClick={() => setTeamFilter('direct')}
+                        className={`px-3 py-1 text-sm font-medium rounded-md transition-colors duration-200 ${
+                          teamFilter === 'direct'
+                            ? 'bg-cyan-500 text-white'
+                            : 'theme-bg-quaternary theme-text-primary hover:theme-bg-tertiary'
+                        }`}
+                      >
+                        Direct
+                      </button>
+                      <button
+                        onClick={() => setTeamFilter('downline')}
+                        className={`px-3 py-1 text-sm font-medium rounded-md transition-colors duration-200 ${
+                          teamFilter === 'downline'
+                            ? 'bg-cyan-500 text-white'
+                            : 'theme-bg-quaternary theme-text-primary hover:theme-bg-tertiary'
+                        }`}
+                      >
+                        Downline
+                      </button>
+                    </div>
+                    
+                    {/* Status Filter */}
+                    <div className="flex items-center space-x-1 ml-2">
+                      <button
+                        onClick={() => setStatusFilter('active')}
+                        className={`px-3 py-1 text-sm font-medium rounded-md transition-colors duration-200 ${
+                          statusFilter === 'active'
+                            ? 'bg-green-500 text-white'
+                            : 'theme-bg-quaternary theme-text-primary hover:theme-bg-tertiary'
+                        }`}
+                      >
+                        Active
+                      </button>
+                      <button
+                        onClick={() => setStatusFilter('inactive')}
+                        className={`px-3 py-1 text-sm font-medium rounded-md transition-colors duration-200 ${
+                          statusFilter === 'inactive'
+                            ? 'bg-red-500 text-white'
+                            : 'theme-bg-quaternary theme-text-primary hover:theme-bg-tertiary'
+                        }`}
+                      >
+                        Inactive
+                      </button>
+                      <button
+                        onClick={() => setStatusFilter('all')}
+                        className={`px-3 py-1 text-sm font-medium rounded-md transition-colors duration-200 ${
+                          statusFilter === 'all'
+                            ? 'bg-gray-500 text-white'
+                            : 'theme-bg-quaternary theme-text-primary hover:theme-bg-tertiary'
+                        }`}
+                      >
+                        All
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -692,7 +812,17 @@ export default function Team() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <button className="text-blue-600 hover:text-blue-900 mr-3">Edit</button>
-                          <button className="text-red-600 hover:text-red-900">Remove</button>
+                          <button 
+                            onClick={() => handleDeactivateMember({
+                              id: member.id,
+                              name: member.name,
+                              email: member.email
+                            })}
+                            className="text-red-600 hover:text-red-900"
+                            disabled={!member.isActive}
+                          >
+                            {member.isActive ? 'Deactivate' : 'Inactive'}
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -768,6 +898,55 @@ export default function Team() {
                   className="px-4 py-2 theme-bg-quaternary theme-text-primary theme-border-primary border rounded-md hover:theme-bg-tertiary"
                 >
                   Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Deactivation Confirmation Modal */}
+      {showDeactivateConfirm && memberToDeactivate && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 theme-bg-primary bg-opacity-75">
+          <div className="theme-bg-tertiary rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div className="p-6">
+              <div className="flex items-center mb-4">
+                <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center mr-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 19.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold theme-text-primary">Deactivate Account</h3>
+              </div>
+              
+              <div className="mb-6">
+                <p className="text-sm theme-text-secondary mb-2">
+                  Are you sure you want to deactivate the account for:
+                </p>
+                <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
+                  <p className="font-medium theme-text-primary">{memberToDeactivate.name}</p>
+                  <p className="text-sm theme-text-secondary">{memberToDeactivate.email}</p>
+                </div>
+                <p className="text-sm theme-text-secondary mt-2">
+                  This will prevent them from accessing the system but preserve their data.
+                </p>
+              </div>
+              
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => {
+                    setShowDeactivateConfirm(false);
+                    setMemberToDeactivate(null);
+                  }}
+                  className="px-4 py-2 theme-bg-quaternary theme-text-primary theme-border-primary border rounded-md hover:theme-bg-tertiary"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDeactivation}
+                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors duration-200"
+                >
+                  Deactivate Account
                 </button>
               </div>
             </div>
