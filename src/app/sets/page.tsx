@@ -1908,15 +1908,7 @@ The set has been moved to Projects for commission tracking. You can now track mi
                           />
                         </div>
                         
-                        <div className="col-span-2">
-                          <p className="text-sm theme-text-secondary p-2 bg-gray-100 dark:bg-gray-800 rounded">
-                            Other dates (permit, install, inspection, PTO, and payment) can be added later after the site survey is completed.
-                            <br/>
-                            <span className="mt-1 inline-block">
-                              <span className={darkMode ? "text-cyan-400" : "text-cyan-500"}>Note:</span> For accounts 1-20, payment dates will be automatically set to the Friday of the next week's payroll.
-                            </span>
-                          </p>
-                        </div>
+
                       </div>
                       
                       <div className="sticky bottom-0 theme-bg-tertiary pt-4 pb-2 border-t theme-border-primary mt-5">

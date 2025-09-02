@@ -1329,6 +1329,14 @@ export default function Projects() {
                   <>
                     <h1 className="text-2xl font-semibold theme-text-primary">My Projects</h1>
                     <p className="theme-text-secondary">Track your projects and commissions</p>
+                    <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                      <p className="text-sm text-blue-800 dark:text-blue-200">
+                        <strong>Project Timeline:</strong> Other dates (permit, install, inspection, PTO, and payment) can be added later after the site survey is completed.
+                      </p>
+                      <p className="text-sm text-blue-800 dark:text-blue-200 mt-1">
+                        <strong>Note:</strong> For accounts 1-20, payment dates will be automatically set to the Friday of the next week's payroll.
+                      </p>
+                    </div>
                   </>
                 )}
               </div>
