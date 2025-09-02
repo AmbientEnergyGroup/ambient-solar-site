@@ -686,3 +686,140 @@ export const getDataIntegrityCheck = async (): Promise<{
     throw error;
   }
 };
+
+// Region and Team-based query functions
+export const getClosersByRegion = async (region: string): Promise<UserData[]> => {
+  try {
+    const database = getFirebaseDB();
+    const usersRef = ref(database, 'users');
+    const regionQuery = query(usersRef, orderByChild('region'), equalTo(region));
+    const snapshot = await get(regionQuery);
+    
+    if (snapshot.exists()) {
+      const users = snapshot.val();
+      return Object.values(users).filter((user: any) => 
+        user.role === 'closer' && user.active !== false
+      ) as UserData[];
+    }
+    return [];
+  } catch (error) {
+    console.error('Error getting closers by region:', error);
+    return [];
+  }
+};
+
+export const getUsersByRegion = async (region: string): Promise<UserData[]> => {
+  try {
+    const database = getFirebaseDB();
+    const usersRef = ref(database, 'users');
+    const regionQuery = query(usersRef, orderByChild('region'), equalTo(region));
+    const snapshot = await get(regionQuery);
+    
+    if (snapshot.exists()) {
+      const users = snapshot.val();
+      return Object.values(users).filter((user: any) => 
+        user.active !== false
+      ) as UserData[];
+    }
+    return [];
+  } catch (error) {
+    console.error('Error getting users by region:', error);
+    return [];
+  }
+};
+
+export const getProjectsByRegion = async (region: string): Promise<Project[]> => {
+  try {
+    const database = getFirebaseDB();
+    const projectsRef = ref(database, 'projects');
+    const snapshot = await get(projectsRef);
+    
+    if (snapshot.exists()) {
+      const projects = snapshot.val();
+      return Object.values(projects).filter((project: any) => 
+        project.region === region
+      ) as Project[];
+    }
+    return [];
+  } catch (error) {
+    console.error('Error getting projects by region:', error);
+    return [];
+  }
+};
+
+export const getCustomerSetsByRegion = async (region: string): Promise<CustomerSet[]> => {
+  try {
+    const database = getFirebaseDB();
+    const setsRef = ref(database, 'customerSets');
+    const snapshot = await get(setsRef);
+    
+    if (snapshot.exists()) {
+      const sets = snapshot.val();
+      return Object.values(sets).filter((set: any) => 
+        set.region === region
+      ) as CustomerSet[];
+    }
+    return [];
+  } catch (error) {
+    console.error('Error getting customer sets by region:', error);
+    return [];
+  }
+};
+
+export const getUsersByTeam = async (team: string): Promise<UserData[]> => {
+  try {
+    const database = getFirebaseDB();
+    const usersRef = ref(database, 'users');
+    const teamQuery = query(usersRef, orderByChild('team'), equalTo(team));
+    const snapshot = await get(teamQuery);
+    
+    if (snapshot.exists()) {
+      const users = snapshot.val();
+      return Object.values(users).filter((user: any) => 
+        user.active !== false
+      ) as UserData[];
+    }
+    return [];
+  } catch (error) {
+    console.error('Error getting users by team:', error);
+    return [];
+  }
+};
+
+export const getProjectsByTeam = async (team: string): Promise<Project[]> => {
+  try {
+    const database = getFirebaseDB();
+    const projectsRef = ref(database, 'projects');
+    const snapshot = await get(projectsRef);
+    
+    if (snapshot.exists()) {
+      const projects = snapshot.val();
+      return Object.values(projects).filter((project: any) => 
+        project.team === team
+      ) as Project[];
+    }
+    return [];
+  } catch (error) {
+    console.error('Error getting projects by team:', error);
+    return [];
+  }
+};
+
+export const getCustomerSetsByTeam = async (team: string): Promise<CustomerSet[]> => {
+  try {
+    const database = getFirebaseDB();
+    const setsRef = ref(database, 'customerSets');
+    const snapshot = await get(setsRef);
+    
+    if (snapshot.exists()) {
+      const sets = snapshot.val();
+      return Object.values(sets).filter((set: any) => 
+        set.team === team
+      ) as CustomerSet[];
+    }
+    return [];
+  } catch (error) {
+    console.error('Error getting customer sets by team:', error);
+    return [];
+  }
+};
