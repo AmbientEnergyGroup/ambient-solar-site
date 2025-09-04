@@ -154,6 +154,29 @@ If you believe you received this email in error, please contact support.
 
       // Add email to invited list
       addInvitedEmail(email);
+      
+      // Store recruiter information for when the rep creates their account
+      try {
+        const recruiterResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/store-recruiter`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email,
+            recruitedBy,
+            addendum: addendum || ''
+          })
+        });
+        
+        if (recruiterResponse.ok) {
+          console.log('Stored recruiter information for:', email);
+        } else {
+          console.warn('Failed to store recruiter information');
+        }
+      } catch (error) {
+        console.error('Error storing recruiter information:', error);
+      }
 
       // Send DocuSign agreement
       let agreementResult = { success: true, envelopeId: null };

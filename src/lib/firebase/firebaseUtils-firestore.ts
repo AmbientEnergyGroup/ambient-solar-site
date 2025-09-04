@@ -38,6 +38,7 @@ export interface UserData {
   createdAt: string;
   updatedAt?: string;
   managerId?: string;
+  recruitedBy?: string;
   active: boolean;
   dealCount: number;
   totalCommission: number;
@@ -121,7 +122,7 @@ export const signInWithGoogle = async () => {
 };
 
 // User data management
-export const createUserData = async (user: User, role: 'admin' | 'setter' | 'closer' | 'manager' | 'region_admin' | 'office_admin' | 'owner_admin' = 'setter') => {
+export const createUserData = async (user: User, role: 'admin' | 'setter' | 'closer' | 'manager' | 'region_admin' | 'office_admin' | 'owner_admin' = 'setter', recruitedBy?: string) => {
   const userData: UserData = {
     id: user.uid,
     role,
@@ -131,6 +132,7 @@ export const createUserData = async (user: User, role: 'admin' | 'setter' | 'clo
     team: 'Team A',
     region: 'Region A',
     payType: 'Rookie',
+    recruitedBy: recruitedBy || undefined,
     createdAt: new Date().toISOString(),
     active: true,
     dealCount: 0,

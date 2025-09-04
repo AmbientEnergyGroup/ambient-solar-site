@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/contexts/AuthContext";
-import { updateUserActive } from "@/lib/firebase/firebaseUtils";
+import { updateUserActive, getAllUsers, UserData } from "@/lib/firebase/firebaseUtils";
 import { Users, LogOut, Home, Search, Plus, Filter, MapPin } from "lucide-react";
 import AmbientLogo from "@/components/AmbientLogo";
 import Sidebar from "@/components/Sidebar";
@@ -49,6 +49,8 @@ export default function Team() {
   const [repPerformance, setRepPerformance] = useState<{[key: string]: number}>({});
   const [teamFilter, setTeamFilter] = useState<'direct' | 'downline'>('direct');
   const [statusFilter, setStatusFilter] = useState<'active' | 'inactive' | 'all'>('all');
+  const [teamMembers, setTeamMembers] = useState<UserData[]>([]);
+  const [loadingTeamMembers, setLoadingTeamMembers] = useState(false);
   const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
   const [memberToDeactivate, setMemberToDeactivate] = useState<{
     id: string;
@@ -246,6 +248,9 @@ export default function Team() {
       // Show success message
       alert(`Invitation sent to ${newRepData.name} at ${newRepData.email}. They will be recruited by ${newRepData.recruitedBy}`);
       
+      // Refresh team members list to show the new rep
+      loadTeamMembers();
+      
     } catch (error) {
       console.error('Error sending invitation:', error);
       alert(`Failed to send invitation: ${error instanceof Error ? error.message : 'Please try again.'}`);
@@ -289,10 +294,51 @@ export default function Team() {
     }
   };
 
+  // Load team members from Firebase
+  const loadTeamMembers = async () => {
+    if (!user) return;
+    
+    setLoadingTeamMembers(true);
+    try {
+      const allUsers = await getAllUsers();
+      console.log('Loaded all users:', allUsers);
+      
+      // Filter to get team members recruited by current user
+      const myTeamMembers = allUsers.filter((userData: any) => 
+        userData.recruitedBy === user.displayName || 
+        userData.recruitedBy === user.email ||
+        userData.recruitedBy === (user.displayName || user.email)
+      );
+      
+      console.log('My team members:', myTeamMembers);
+      setTeamMembers(myTeamMembers);
+    } catch (error) {
+      console.error('Error loading team members:', error);
+      setTeamMembers([]);
+    } finally {
+      setLoadingTeamMembers(false);
+    }
+  };
+
   // Filter team members based on Direct vs Downline and Active vs Inactive
   const getFilteredTeamMembers = () => {
-    // Sample team data - in a real app, this would come from your database
-    const allTeamMembers = [
+    // Use real team data from Firebase
+    let allTeamMembers = teamMembers.map((member: any) => ({
+      id: member.id,
+      name: member.displayName,
+      email: member.email,
+      phone: member.phoneNumber || 'Not provided',
+      role: member.role === 'admin' ? 'Manager' : member.role === 'setter' ? 'Sales Rep' : member.role,
+      mr: member.recruitedBy || 'Unknown',
+      status: member.active ? 'Active' : 'Inactive',
+      isActive: member.active,
+      performance: repPerformance[member.displayName] || 0,
+      isDirect: true // All team members are direct reports
+    }));
+
+    // Fallback to sample data if no real data
+    if (allTeamMembers.length === 0) {
+      const sampleTeamMembers = [
       {
         id: '1',
         name: 'John Doe',
@@ -366,6 +412,9 @@ export default function Team() {
         isDirect: false // Downline - recruited by John Doe, not current user
       }
     ];
+    
+    allTeamMembers = sampleTeamMembers;
+    }
 
     let filteredMembers = allTeamMembers;
 
@@ -389,7 +438,7 @@ export default function Team() {
   // Get list of managers for the Add Rep form
   const getManagersList = () => {
     const allTeamMembers = getFilteredTeamMembers();
-    const managers = allTeamMembers.filter(member => member.role === 'Manager');
+    const managers = allTeamMembers.filter((member: any) => member.role === 'Manager');
     
     // Add current user as a manager option
     const currentUser = {
@@ -400,6 +449,13 @@ export default function Team() {
     
     return [currentUser, ...managers];
   };
+
+  // Load team members when component mounts or user changes
+  useEffect(() => {
+    if (user) {
+      loadTeamMembers();
+    }
+  }, [user]);
 
   // Close dropdown when clicking outside
   useEffect(() => {

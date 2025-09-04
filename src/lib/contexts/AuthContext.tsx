@@ -423,9 +423,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Check if user exists in our database
       const existingUser = await getUserData(result.user.uid);
       if (!existingUser) {
+        // Get recruiter information if available
+        let recruitedBy = undefined;
+        try {
+          const recruiterResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/store-recruiter?email=${encodeURIComponent(result.user.email || '')}`);
+          if (recruiterResponse.ok) {
+            const recruiterData = await recruiterResponse.json();
+            recruitedBy = recruiterData.recruiterInfo?.recruitedBy;
+            console.log('Found recruiter information:', recruitedBy);
+          }
+        } catch (error) {
+          console.log('No recruiter information found or error retrieving it');
+        }
+        
         // Create new user data with clean slate
         console.log('Creating new user with clean slate');
-        const newUserData = await createUserData(result.user, { role: 'setter' });
+        const newUserData = await createUserData(result.user, 'setter' as any);
+        
+        // Update with recruiter information if available
+        if (recruitedBy) {
+          try {
+            await updateUserData(result.user.uid, { recruitedBy } as any);
+            (newUserData as any).recruitedBy = recruitedBy;
+            console.log('✅ Updated user with recruiter information:', recruitedBy);
+          } catch (error) {
+            console.error('Error updating user with recruiter information:', error);
+          }
+        }
         
         // Save to localStorage for UserProfile component
         const userProfileKey = `userProfile_${result.user.uid}`;
