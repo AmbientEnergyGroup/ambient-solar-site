@@ -1175,7 +1175,7 @@ export default function HRPage() {
                           onChange={(e) => setDateFilter(e.target.value as 'all' | '30days' | '90days' | '1year')}
                           className={`px-3 py-1 rounded-md text-sm border ${
                             darkMode 
-                              ? 'bg-gray-700 border-gray-600 text-white' 
+                              ? 'bg-black border-gray-600 text-white' 
                               : 'bg-white border-gray-300 text-gray-900'
                           }`}
                         >

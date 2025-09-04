@@ -514,6 +514,25 @@ export const getCustomerSetsByTeam = async (team: string): Promise<CustomerSet[]
   }
 };
 
+// Get all projects from all users (for admin pipeline view)
+export const getAllProjects = async (): Promise<Project[]> => {
+  try {
+    const q = query(
+      collection(getFirebaseDB(), 'projects'),
+      orderBy('createdAt', 'desc')
+    );
+    
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    })) as Project[];
+  } catch (error) {
+    console.error("Error getting all projects:", error);
+    return [];
+  }
+};
+
 // Legacy functions for backward compatibility
 export const addDocument = (collectionName: string, data: any) =>
   addDoc(collection(getFirebaseDB(), collectionName), data);

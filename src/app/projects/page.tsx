@@ -318,43 +318,13 @@ export default function Projects() {
   const { user, userData, loading, signOut, isAdmin } = auth || {};
   const router = useRouter();
   
-  // State for pay type modal
-  const [showPayTypeModal, setShowPayTypeModal] = useState(false);
-  const [selectedPayType, setSelectedPayType] = useState<'Rookie' | 'Vet' | 'Pro'>(
-    (userData?.payType as 'Rookie' | 'Vet' | 'Pro') || 'Rookie'
-  );
+  // Pay type from user data (read-only)
+  const selectedPayType = (userData?.payType as 'Rookie' | 'Vet' | 'Pro') || 'Rookie';
 
-  // Sync pay type from localStorage on component mount and user changes
-  useEffect(() => {
-    if (user && user.uid) {
-      // Create user-specific storage keys
-      const userPayTypeKey = `userPayType_${user.uid}`;
-      const userDataKey = `userData_${user.uid}`;
-      
-      // First check for user-specific pay type storage
-      const storedPayType = localStorage.getItem(userPayTypeKey);
-      if (storedPayType && ['Rookie', 'Vet', 'Pro'].includes(storedPayType)) {
-        setSelectedPayType(storedPayType as 'Rookie' | 'Vet' | 'Pro');
-      } else {
-        // Fallback to user-specific userData
-        const storedUserData = localStorage.getItem(userDataKey);
-        if (storedUserData) {
-          try {
-            const parsedUserData = JSON.parse(storedUserData);
-            if (parsedUserData.payType) {
-              setSelectedPayType(parsedUserData.payType);
-            }
-          } catch (e) {
-            console.error('Error parsing userData from localStorage:', e);
-          }
-        }
-      }
-    }
-  }, [user, user?.uid]);
 
   // Calculate upfront pay based on pay type and deal count
   const calculateUpfrontPay = () => {
-    const upfrontRate = selectedPayType === 'Rookie' ? 350 : selectedPayType === 'Vet' ? 600 : 800;
+    const upfrontRate = selectedPayType === 'Rookie' ? 300 : selectedPayType === 'Vet' ? 600 : 800;
     return userStats.dealCount * upfrontRate;
   };
 
@@ -1411,14 +1381,9 @@ export default function Projects() {
           <div className="theme-bg-tertiary rounded-lg shadow-md p-4 mb-6">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-lg font-medium theme-text-primary">Pay Type</h2>
-              {isAdmin && (
-                <button
-                  onClick={() => setShowPayTypeModal(true)}
-                  className="px-3 py-1 text-sm rounded-md theme-bg-quaternary theme-text-primary hover:opacity-80 transition-opacity"
-                >
-                  Change
-                </button>
-              )}
+              <div className="text-sm theme-text-secondary">
+                Set in Account Settings
+              </div>
             </div>
             <div className="flex items-center space-x-4">
               <div className={`px-4 py-2 rounded-lg border-2 ${
@@ -1474,16 +1439,16 @@ export default function Projects() {
           <div className="theme-bg-tertiary rounded-lg shadow-md p-4 mb-6">
             <h2 className="text-lg font-medium theme-text-primary mb-3">Commission Structure</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                              <div className={`rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-100'} p-4 border-l-4 border-cyan-500`}>
+                              <div className={`rounded-lg ${darkMode ? 'bg-black' : 'bg-gray-100'} p-4 border-l-4 border-cyan-500`}>
                 <p className="theme-text-secondary text-sm mb-2">Upfront Pay</p>
                 <p className="theme-text-primary text-lg font-bold">
-                  ${selectedPayType === 'Rookie' ? '350' : selectedPayType === 'Vet' ? '600' : '800'}/deal
+                  ${selectedPayType === 'Rookie' ? '300' : selectedPayType === 'Vet' ? '600' : '800'}/deal
                 </p>
                 <p className="theme-text-primary text-lg font-bold mt-1">
                   YTD: {formatCurrency(calculateUpfrontPay())}
                 </p>
               </div>
-              <div className={`rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-100'} p-4 border-l-4 border-cyan-500`}>
+              <div className={`rounded-lg ${darkMode ? 'bg-black' : 'bg-gray-100'} p-4 border-l-4 border-cyan-500`}>
                 <p className="theme-text-secondary text-sm mb-2">Milestone Pay</p>
                 <p className="theme-text-primary text-lg font-bold">
                   {selectedPayType === 'Rookie' ? '24%' : selectedPayType === 'Vet' ? '39%' : '50%'} of Commission
@@ -1492,7 +1457,7 @@ export default function Projects() {
                   YTD: {formatCurrency(calculateMilestonePay())}
                 </p>
               </div>
-              <div className={`rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-100'} p-4 border-l-4 border-cyan-500`}>
+              <div className={`rounded-lg ${darkMode ? 'bg-black' : 'bg-gray-100'} p-4 border-l-4 border-cyan-500`}>
                 <p className="theme-text-secondary text-sm mb-2">Total Earnings</p>
                 <p className="theme-text-primary text-lg font-bold">
                   YTD: {formatCurrency(calculateUpfrontPay() + calculateMilestonePay())}
@@ -1505,7 +1470,7 @@ export default function Projects() {
           <div className="theme-bg-tertiary rounded-lg shadow-md p-4 mb-6">
             <h2 className="text-lg font-medium theme-text-primary mb-3">Company Performance</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className={`rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-100'} p-4`}>
+              <div className={`rounded-lg ${darkMode ? 'bg-black' : 'bg-gray-100'} p-4`}>
                 <p className="theme-text-secondary text-sm mb-2">Total Revenue Generated</p>
                 <p className="theme-text-primary text-lg font-bold">
                   {formatCurrency(companyStats.totalRevenue)}
@@ -1514,7 +1479,7 @@ export default function Projects() {
                   Based on {projects.filter(p => p.grossPPW && p.systemSize && p.status !== "cancelled").length} active contracts
                 </p>
               </div>
-              <div className={`rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-100'} p-4`}>
+              <div className={`rounded-lg ${darkMode ? 'bg-black' : 'bg-gray-100'} p-4`}>
                 <p className="theme-text-secondary text-sm mb-2">Average System Size</p>
                 <p className="theme-text-primary text-lg font-bold">
                   {companyStats.avgSystemSize.toFixed(1)} kW
@@ -1523,7 +1488,7 @@ export default function Projects() {
                   Average across all projects
                 </p>
               </div>
-              <div className={`rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-100'} p-4`}>
+              <div className={`rounded-lg ${darkMode ? 'bg-black' : 'bg-gray-100'} p-4`}>
                 <p className="theme-text-secondary text-sm mb-2">Average Contract Value</p>
                 <p className="theme-text-primary text-lg font-bold">
                   {formatCurrency(companyStats.avgContractValue)}
@@ -2176,8 +2141,6 @@ export default function Projects() {
         </div>
       )}
 
-      {/* Pay Type Change Modal */}
-      {showPayTypeModal && (
         <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
           <div className="theme-bg-tertiary p-6 rounded-lg shadow-lg w-full max-w-md">
             <h2 className="text-xl font-semibold theme-text-primary mb-4">Change Pay Type</h2>
@@ -2193,7 +2156,7 @@ export default function Projects() {
                   className={`px-4 py-3 text-left rounded border-2 transition-colors ${
                     selectedPayType === 'Rookie' 
                       ? `${darkMode ? 'border-cyan-500 bg-cyan-500/20' : 'border-cyan-500 bg-cyan-500/20'}`
-                      : 'theme-border-primary hover:bg-gray-100 dark:hover:bg-gray-700'
+                      : 'theme-border-primary hover:bg-gray-100 dark:hover:bg-black'
                   }`}
                 >
                   <div className="font-medium theme-text-primary">Rookie</div>
@@ -2205,7 +2168,7 @@ export default function Projects() {
                   className={`px-4 py-3 text-left rounded border-2 transition-colors ${
                     selectedPayType === 'Vet' 
                       ? `${darkMode ? 'border-cyan-500 bg-cyan-500/20' : 'border-cyan-500 bg-cyan-500/20'}`
-                      : 'theme-border-primary hover:bg-gray-100 dark:hover:bg-gray-700'
+                      : 'theme-border-primary hover:bg-gray-100 dark:hover:bg-black'
                   }`}
                 >
                   <div className="font-medium theme-text-primary">Vet</div>
@@ -2217,7 +2180,7 @@ export default function Projects() {
                   className={`px-4 py-3 text-left rounded border-2 transition-colors ${
                     selectedPayType === 'Pro' 
                       ? `${darkMode ? 'border-cyan-500 bg-cyan-500/20' : 'border-cyan-500 bg-cyan-500/20'}`
-                      : 'theme-border-primary hover:bg-gray-100 dark:hover:bg-gray-700'
+                      : 'theme-border-primary hover:bg-gray-100 dark:hover:bg-black'
                   }`}
                 >
                   <div className="font-medium theme-text-primary">Pro</div>
@@ -2383,23 +2346,23 @@ export default function Projects() {
                   </h3>
                   
                   <div className="grid grid-cols-1 gap-3">
-                    <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
                       <span className="font-medium theme-text-primary">E/A Battery</span>
                       <span className="text-lg font-bold text-green-600">$8,000</span>
                     </div>
-                    <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
                       <span className="font-medium theme-text-primary">Backup Battery</span>
                       <span className="text-lg font-bold text-green-600">$13,000</span>
                     </div>
-                    <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
                       <span className="font-medium theme-text-primary">MPU</span>
                       <span className="text-lg font-bold text-green-600">$3,500</span>
                     </div>
-                    <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
                       <span className="font-medium theme-text-primary">HTI</span>
                       <span className="text-lg font-bold text-green-600">$2,500</span>
                     </div>
-                    <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
                       <span className="font-medium theme-text-primary">Reroof</span>
                       <span className="text-lg font-bold text-green-600">$15,000</span>
                     </div>
@@ -2456,7 +2419,7 @@ export default function Projects() {
             <div className="p-6">
               <div className="space-y-6">
                 {/* Project Details */}
-                <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
                   <div>
                     <h4 className="font-medium theme-text-primary">System Size</h4>
                     <p className="text-lg font-bold text-blue-600">{selectedProjectForBreakdown.project.systemSize} kW</p>
@@ -2484,7 +2447,7 @@ export default function Projects() {
                 <div className="space-y-4">
                   <h4 className="font-semibold theme-text-primary border-b theme-border-primary pb-2">Cost Breakdown</h4>
                   
-                  <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
                     <span className="font-medium theme-text-primary">Base Cost</span>
                     <span className="text-lg font-bold text-red-600">
                       ${selectedProjectForBreakdown.baseCost.toLocaleString()}
@@ -2492,7 +2455,7 @@ export default function Projects() {
                   </div>
                   
                   {selectedProjectForBreakdown.adders > 0 && (
-                    <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
                       <span className="font-medium theme-text-primary">Adders</span>
                       <span className="text-lg font-bold text-red-600">
                         ${selectedProjectForBreakdown.adders.toLocaleString()}
@@ -2512,14 +2475,14 @@ export default function Projects() {
                 <div className="space-y-4">
                   <h4 className="font-semibold theme-text-primary border-b theme-border-primary pb-2">Commission Calculation</h4>
                   
-                  <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
                     <span className="font-medium theme-text-primary">Commission Amount</span>
                     <span className="text-lg font-bold text-blue-600">
                       ${selectedProjectForBreakdown.commissionAmount.toLocaleString()}
                     </span>
                   </div>
                   
-                  <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
                     <span className="font-medium theme-text-primary">Your Rate ({selectedProjectForBreakdown.selectedPayType})</span>
                     <span className="text-lg font-bold text-purple-600">
                       {(selectedProjectForBreakdown.commissionPercentage * 100)}%
@@ -2540,31 +2503,31 @@ export default function Projects() {
                     <h4 className="font-semibold theme-text-primary border-b theme-border-primary pb-2">Selected Adders</h4>
                     <div className="grid grid-cols-1 gap-2">
                       {selectedProjectForBreakdown.project.eaBattery && (
-                        <div className="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                        <div className="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-900 rounded">
                           <span className="theme-text-primary">E/A Battery</span>
                           <span className="font-bold text-green-600">$8,000</span>
                         </div>
                       )}
                       {selectedProjectForBreakdown.project.backupBattery && (
-                        <div className="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                        <div className="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-900 rounded">
                           <span className="theme-text-primary">Backup Battery</span>
                           <span className="font-bold text-green-600">$13,000</span>
                         </div>
                       )}
                       {selectedProjectForBreakdown.project.mpu && (
-                        <div className="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                        <div className="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-900 rounded">
                           <span className="theme-text-primary">MPU</span>
                           <span className="font-bold text-green-600">$3,500</span>
                         </div>
                       )}
                       {selectedProjectForBreakdown.project.hti && (
-                        <div className="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                        <div className="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-900 rounded">
                           <span className="theme-text-primary">HTI</span>
                           <span className="font-bold text-green-600">$2,500</span>
                         </div>
                       )}
                       {selectedProjectForBreakdown.project.reroof && (
-                        <div className="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                        <div className="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-900 rounded">
                           <span className="theme-text-primary">Reroof</span>
                           <span className="font-bold text-green-600">$15,000</span>
                         </div>

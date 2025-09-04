@@ -552,7 +552,7 @@ export default function DeveloperConsole() {
               <div className="flex space-x-2">
                 <button
                   onClick={() => loadUsers()}
-                  className={`flex items-center px-3 py-2 rounded ${darkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+                  className={`flex items-center px-3 py-2 rounded ${darkMode ? 'bg-black text-gray-200 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
                 >
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Refresh Users
@@ -608,7 +608,7 @@ export default function DeveloperConsole() {
                         <div className="flex space-x-2 justify-end">
                           <button
                             onClick={() => resetUserData(userData.id)}
-                            className={`p-1 rounded text-xs ${darkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+                            className={`p-1 rounded text-xs ${darkMode ? 'bg-black text-gray-200 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
                             title="Reset User Data"
                           >
                             <RefreshCw className="h-4 w-4" />

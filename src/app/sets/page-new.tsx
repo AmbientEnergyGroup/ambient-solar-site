@@ -260,7 +260,7 @@ export default function Sets() {
 
           {/* Stats */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+            <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow">
               <div className="flex items-center">
                 <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
                   <BarChart3 className="h-6 w-6 text-blue-600 dark:text-blue-400" />
@@ -274,7 +274,7 @@ export default function Sets() {
               </div>
             </div>
             
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+            <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow">
               <div className="flex items-center">
                 <div className="p-2 bg-yellow-100 dark:bg-yellow-900 rounded-lg">
                   <Users className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
@@ -288,7 +288,7 @@ export default function Sets() {
               </div>
             </div>
             
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+            <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow">
               <div className="flex items-center">
                 <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
                   <Check className="h-6 w-6 text-green-600 dark:text-green-400" />
@@ -304,7 +304,7 @@ export default function Sets() {
           </div>
 
           {/* Search and Filters */}
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mb-6">
+          <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow mb-6">
             <div className="flex flex-col md:flex-row gap-4">
               <div className="flex-1">
                 <div className="relative">
@@ -314,7 +314,7 @@ export default function Sets() {
                     placeholder="Search by name, address, or phone..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-black dark:text-white"
                   />
                 </div>
               </div>
@@ -322,7 +322,7 @@ export default function Sets() {
           </div>
 
           {/* Tabs */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow mb-6">
+          <div className="bg-white dark:bg-gray-900 rounded-lg shadow mb-6">
             <div className="border-b border-gray-200 dark:border-gray-700">
               <nav className="flex space-x-8 px-6">
                 {[
@@ -348,7 +348,7 @@ export default function Sets() {
             {/* Sets Table */}
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead className="bg-gray-50 dark:bg-gray-700">
+                <thead className="bg-gray-50 dark:bg-black">
                   <tr>
                     {[
                       { key: 'customerName', label: 'Customer' },
@@ -376,7 +376,7 @@ export default function Sets() {
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
                   {loading ? (
                     <tr>
                       <td colSpan={7} className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
@@ -391,7 +391,7 @@ export default function Sets() {
                     </tr>
                   ) : (
                     filteredSets.map((set) => (
-                      <tr key={set.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                      <tr key={set.id} className="hover:bg-gray-50 dark:hover:bg-black">
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                           {set.customerName}
                         </td>
@@ -457,7 +457,7 @@ export default function Sets() {
       {/* New Set Modal */}
       {showNewSetModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-white dark:bg-gray-900 rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">New Set</h2>
               <button
@@ -481,7 +481,7 @@ export default function Sets() {
                       type="text"
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-black dark:text-white"
                       required
                     />
                   </div>
@@ -493,7 +493,7 @@ export default function Sets() {
                       type="text"
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-black dark:text-white"
                       required
                     />
                   </div>
@@ -506,7 +506,7 @@ export default function Sets() {
                     type="text"
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-black dark:text-white"
                     required
                   />
                 </div>
@@ -519,7 +519,7 @@ export default function Sets() {
                       type="tel"
                       value={phoneNumber}
                       onChange={(e) => setPhoneNumber(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-black dark:text-white"
                       required
                     />
                   </div>
@@ -531,7 +531,7 @@ export default function Sets() {
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-black dark:text-white"
                     />
                   </div>
                 </div>
@@ -551,7 +551,7 @@ export default function Sets() {
                       type="date"
                       value={appointmentDate}
                       onChange={(e) => setAppointmentDate(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-black dark:text-white"
                       required
                     />
                   </div>
@@ -563,7 +563,7 @@ export default function Sets() {
                       type="time"
                       value={appointmentTime}
                       onChange={(e) => setAppointmentTime(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-black dark:text-white"
                       required
                     />
                   </div>
@@ -595,7 +595,7 @@ export default function Sets() {
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     rows={4}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-black dark:text-white"
                     placeholder="Any additional notes about this customer..."
                   />
                 </div>
@@ -607,7 +607,7 @@ export default function Sets() {
                     type="file"
                     accept="image/*,.pdf"
                     onChange={(e) => setUtilityBill(e.target.files?.[0] || null)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-black dark:text-white"
                   />
                 </div>
               </div>

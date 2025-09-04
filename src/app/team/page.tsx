@@ -61,7 +61,7 @@ export default function Team() {
   const { darkMode } = useTheme();
   
   const auth = useAuth();
-  const { user, loading, signOut } = auth || {};
+  const { user, userData, loading, signOut } = auth || {};
   const router = useRouter();
 
   // Add a new useEffect for client-side initialization
@@ -145,7 +145,7 @@ export default function Team() {
         const currentYear = new Date().getFullYear();
         
         // Calculate manager commission ($175/kW on all team deals) and total team revenue (includes all team members + manager)
-        const managerCommission = calculateManagerCommission(projects, currentYear);
+        const managerCommission = calculateManagerCommission(projects, currentYear, userData?.managerType);
         const totalRevenue = calculateTeamRevenue(projects, currentYear);
         
         setYtdTeamEarnings(managerCommission);
@@ -655,7 +655,11 @@ export default function Team() {
                   <div>
                     <p className="text-sm theme-text-secondary">YTD Manager Commission</p>
                     <p className="text-2xl font-bold theme-text-primary">${ytdTeamEarnings.toLocaleString()}</p>
-                    <p className="text-xs theme-text-secondary mt-1">$175/kW on team deals</p>
+                    <p className="text-xs theme-text-secondary mt-1">
+                      {userData?.managerType === 'Area Manager' ? '$100/kW' : 
+                       userData?.managerType === 'Regional' ? '$300/kW' : 
+                       '$175/kW'} on team deals
+                    </p>
                   </div>
                   <div className={`p-3 rounded-full ${darkMode ? 'bg-green-500 bg-opacity-20' : 'bg-green-500 bg-opacity-20'}`}>
                     <svg xmlns="http://www.w3.org/2000/svg" className={`h-6 w-6 ${darkMode ? 'text-green-500' : 'text-green-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -814,7 +818,7 @@ export default function Team() {
                                 email: member.email,
                                 phone: member.phone
                               })}
-                              className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors duration-200"
+                              className="p-1 hover:bg-gray-100 dark:hover:bg-black rounded-full transition-colors duration-200"
                               title="View contact info"
                             >
                               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 theme-text-secondary hover:theme-text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -884,7 +888,7 @@ export default function Team() {
                 <h2 className="text-xl font-semibold theme-text-primary">Contact Information</h2>
                 <button
                   onClick={() => setShowRepInfo(false)}
-                  className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors duration-200"
+                  className="p-1 hover:bg-gray-100 dark:hover:bg-black rounded-full transition-colors duration-200"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 theme-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -964,7 +968,7 @@ export default function Team() {
                 <p className="text-sm theme-text-secondary mb-2">
                   Are you sure you want to deactivate the account for:
                 </p>
-                <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
+                <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded-lg">
                   <p className="font-medium theme-text-primary">{memberToDeactivate.name}</p>
                   <p className="text-sm theme-text-secondary">{memberToDeactivate.email}</p>
                 </div>

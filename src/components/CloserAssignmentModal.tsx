@@ -199,8 +199,8 @@ export default function CloserAssignmentModal({
 
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-75 backdrop-blur-sm p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 z-10 bg-white dark:bg-gray-800 p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 z-10 bg-white dark:bg-gray-900 p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Assign Closer</h2>
           <button
             onClick={onClose}
@@ -212,7 +212,7 @@ export default function CloserAssignmentModal({
         
         <div className="p-4">
           {/* Set Details */}
-          <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+          <div className="mb-6 p-4 bg-gray-50 dark:bg-black rounded-lg">
             <h3 className="font-medium text-gray-900 dark:text-white mb-3 flex items-center">
               <User className="h-4 w-4 mr-2" />
               {set.customerName}
@@ -314,7 +314,7 @@ export default function CloserAssignmentModal({
           <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
             <button
               onClick={onClose}
-              className="px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              className="px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-black transition-colors"
             >
               Cancel
             </button>

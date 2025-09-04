@@ -159,8 +159,8 @@ function SignupContent() {
 
   if (alreadyLoggedIn) {
     return (
-      <main className="flex min-h-screen flex-col items-center relative bg-gray-700">
-        <div className="w-full bg-gray-700 bg-opacity-80 py-6 flex justify-center relative z-10">
+      <main className="flex min-h-screen flex-col items-center relative bg-black">
+        <div className="w-full bg-black bg-opacity-80 py-6 flex justify-center relative z-10">
           <AmbientPro darkMode={true} />
         </div>
         
@@ -199,7 +199,7 @@ function SignupContent() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-700">
+      <div className="flex min-h-screen items-center justify-center bg-black">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyan-500"></div>
       </div>
     );
@@ -207,8 +207,8 @@ function SignupContent() {
 
   if (registrationComplete) {
     return (
-      <main className="flex min-h-screen flex-col items-center relative bg-gray-700">
-        <div className="w-full bg-gray-700 bg-opacity-80 py-6 flex justify-center relative z-10">
+      <main className="flex min-h-screen flex-col items-center relative bg-black">
+        <div className="w-full bg-black bg-opacity-80 py-6 flex justify-center relative z-10">
           <AmbientPro darkMode={true} />
         </div>
         
@@ -225,7 +225,7 @@ function SignupContent() {
               <h2 className="text-2xl font-bold text-white mb-2">Registration Complete!</h2>
               <p className="text-gray-300 mb-8">Your account has been created successfully</p>
               
-              <div className="mb-8 p-4 bg-gray-800 rounded-lg text-left">
+              <div className="mb-8 p-4 bg-gray-900 rounded-lg text-left">
                 <div className="mb-2">
                   <p className="text-gray-400 text-sm">Account Email:</p>
                   <p className="text-white font-medium">{email}</p>
@@ -256,8 +256,8 @@ function SignupContent() {
 
   if (error && !inviteData && !oobCode) {
     return (
-      <main className="flex min-h-screen flex-col items-center relative bg-gray-700">
-        <div className="w-full bg-gray-700 bg-opacity-80 py-6 flex justify-center relative z-10">
+      <main className="flex min-h-screen flex-col items-center relative bg-black">
+        <div className="w-full bg-black bg-opacity-80 py-6 flex justify-center relative z-10">
           <AmbientPro darkMode={true} />
         </div>
         
@@ -283,8 +283,8 @@ function SignupContent() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center relative bg-gray-700">
-      <div className="w-full bg-gray-700 bg-opacity-80 py-6 flex justify-center relative z-10">
+    <main className="flex min-h-screen flex-col items-center relative bg-black">
+      <div className="w-full bg-black bg-opacity-80 py-6 flex justify-center relative z-10">
         <AmbientPro darkMode={true} />
       </div>
       
@@ -299,7 +299,7 @@ function SignupContent() {
             </h2>
           </div>
           
-          <div className="mb-6 p-4 bg-gray-800 rounded-lg border border-gray-700">
+          <div className="mb-6 p-4 bg-gray-900 rounded-lg border border-gray-700">
             {oobCode ? (
               <p className="text-gray-300 text-sm">
                 Complete your login to <span className="font-semibold text-cyan-500">Ambient Pro</span>. Enter the email address you used to request the login link.
@@ -331,7 +331,7 @@ function SignupContent() {
                 <label className="block text-sm font-medium text-gray-300 mb-1">Email</label>
                 <input
                   type="email"
-                  className="w-full p-3 border border-gray-600 rounded focus:outline-none focus:border-cyan-500 bg-gray-800 text-white disabled:opacity-75"
+                  className="w-full p-3 border border-gray-600 rounded focus:outline-none focus:border-cyan-500 bg-gray-900 text-white disabled:opacity-75"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={!!inviteData} // Email comes from invitation and can't be changed
@@ -351,7 +351,7 @@ function SignupContent() {
                     <label className="block text-sm font-medium text-gray-300 mb-1">Display Name</label>
                     <input
                       type="text"
-                      className="w-full p-3 border border-gray-600 rounded focus:outline-none focus:border-cyan-500 bg-gray-800 text-white"
+                      className="w-full p-3 border border-gray-600 rounded focus:outline-none focus:border-cyan-500 bg-gray-900 text-white"
                       value={displayName}
                       onChange={(e) => setDisplayName(e.target.value)}
                       required
@@ -362,7 +362,7 @@ function SignupContent() {
                     <label className="block text-sm font-medium text-gray-300 mb-1">Password</label>
                     <input
                       type="password"
-                      className="w-full p-3 border border-gray-600 rounded focus:outline-none focus:border-cyan-500 bg-gray-800 text-white"
+                      className="w-full p-3 border border-gray-600 rounded focus:outline-none focus:border-cyan-500 bg-gray-900 text-white"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       minLength={6}
@@ -375,7 +375,7 @@ function SignupContent() {
                     <label className="block text-sm font-medium text-gray-300 mb-1">Confirm Password</label>
                     <input
                       type="password"
-                      className="w-full p-3 border border-gray-600 rounded focus:outline-none focus:border-cyan-500 bg-gray-800 text-white"
+                      className="w-full p-3 border border-gray-600 rounded focus:outline-none focus:border-cyan-500 bg-gray-900 text-white"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       minLength={6}

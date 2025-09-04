@@ -133,12 +133,30 @@ export const calculateTeamEarnings = (
   return totalEarnings;
 };
 
-// Calculate manager commission from team deals ($175/kW)
+// Calculate manager commission from team deals based on manager type
 export const calculateManagerCommission = (
   projects: Project[], 
-  year: number
+  year: number,
+  managerType?: 'Team Lead' | 'Manager' | 'Area Manager' | 'Regional'
 ): number => {
   let managerCommission = 0;
+  
+  // Determine rate based on manager type
+  let ratePerKW = 175; // Default for Team Lead/Manager
+  switch (managerType) {
+    case 'Team Lead':
+    case 'Manager':
+      ratePerKW = 175; // $175 per kW
+      break;
+    case 'Area Manager':
+      ratePerKW = 100; // $100 per kW
+      break;
+    case 'Regional':
+      ratePerKW = 300; // $300 per kW
+      break;
+    default:
+      ratePerKW = 175; // Default to Team Lead rate
+  }
   
   for (const project of projects) {
     // Only include projects from the specified year and not cancelled
@@ -149,7 +167,7 @@ export const calculateManagerCommission = (
       
       const systemSizeKW = parseFloat(project.systemSize);
       if (systemSizeKW > 0) {
-        managerCommission += systemSizeKW * 175; // $175 per kW
+        managerCommission += systemSizeKW * ratePerKW;
       }
     }
   }

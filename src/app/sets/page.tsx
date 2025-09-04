@@ -1500,14 +1500,14 @@ The set has been moved to Projects for commission tracking. You can now track mi
                                     <button
                                       type="button"
                                       onClick={() => handleViewDocuments(set)}
-                                      className={`px-2.5 py-1 rounded text-xs ${darkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+                                      className={`px-2.5 py-1 rounded text-xs ${darkMode ? 'bg-black text-gray-200 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
                                     >
                                       Documents
                                     </button>
                                     <button
                                       type="button"
                                       onClick={() => handleReschedule(set.id)}
-                                      className={`px-2.5 py-1 rounded text-xs ${darkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+                                      className={`px-2.5 py-1 rounded text-xs ${darkMode ? 'bg-black text-gray-200 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
                                     >
                                       Reschedule
                                     </button>
@@ -1540,7 +1540,7 @@ The set has been moved to Projects for commission tracking. You can now track mi
                                     <button
                                       type="button"
                                       onClick={() => handleViewDocuments(set)}
-                                      className={`px-2.5 py-1 rounded text-xs ${darkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+                                      className={`px-2.5 py-1 rounded text-xs ${darkMode ? 'bg-black text-gray-200 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
                                     >
                                       Documents
                                     </button>
@@ -1566,7 +1566,7 @@ The set has been moved to Projects for commission tracking. You can now track mi
                                     <button
                                       type="button"
                                       onClick={() => handleViewDocuments(set)}
-                                      className={`px-2.5 py-1 rounded text-xs ${darkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+                                      className={`px-2.5 py-1 rounded text-xs ${darkMode ? 'bg-black text-gray-200 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
                                     >
                                       Documents
                                     </button>
@@ -1627,7 +1627,7 @@ The set has been moved to Projects for commission tracking. You can now track mi
                       <input
                         id="close-verification"
                         type="checkbox"
-                        className={`w-5 h-5 rounded border-gray-600 bg-gray-700 ${darkMode ? 'text-cyan-500 focus:ring-cyan-500' : 'text-cyan-500 focus:ring-cyan-500'} focus:ring-opacity-50`}
+                        className={`w-5 h-5 rounded border-gray-600 bg-black ${darkMode ? 'text-cyan-500 focus:ring-cyan-500' : 'text-cyan-500 focus:ring-cyan-500'} focus:ring-opacity-50`}
                         checked={isClosedVerified}
                         onChange={(e) => {
                           console.log("🔒 Verification checkbox changed:", e.target.checked);
@@ -1711,7 +1711,7 @@ The set has been moved to Projects for commission tracking. You can now track mi
                               id="adder-ea-battery"
                               checked={closeFormData.eaBattery}
                               onChange={(e) => setCloseFormData({...closeFormData, eaBattery: e.target.checked})}
-                              className={`w-4 h-4 rounded border-gray-600 bg-gray-700 ${darkMode ? 'text-cyan-500 focus:ring-cyan-500' : 'text-cyan-500 focus:ring-cyan-500'} focus:ring-opacity-50`}
+                              className={`w-4 h-4 rounded border-gray-600 bg-black ${darkMode ? 'text-cyan-500 focus:ring-cyan-500' : 'text-cyan-500 focus:ring-cyan-500'} focus:ring-opacity-50`}
                             />
                             <label htmlFor="adder-ea-battery" className="ml-2 block theme-text-primary text-sm">
                               E/A Battery ($8,000)
@@ -1723,7 +1723,7 @@ The set has been moved to Projects for commission tracking. You can now track mi
                               id="adder-backup-battery"
                               checked={closeFormData.backupBattery}
                               onChange={(e) => setCloseFormData({...closeFormData, backupBattery: e.target.checked})}
-                              className={`w-4 h-4 rounded border-gray-600 bg-gray-700 ${darkMode ? 'text-cyan-500 focus:ring-cyan-500' : 'text-cyan-500 focus:ring-cyan-500'} focus:ring-opacity-50`}
+                              className={`w-4 h-4 rounded border-gray-600 bg-black ${darkMode ? 'text-cyan-500 focus:ring-cyan-500' : 'text-cyan-500 focus:ring-cyan-500'} focus:ring-opacity-50`}
                             />
                             <label htmlFor="adder-backup-battery" className="ml-2 block theme-text-primary text-sm">
                               Backup Battery ($13,000)
@@ -1735,7 +1735,7 @@ The set has been moved to Projects for commission tracking. You can now track mi
                               id="adder-mpu"
                               checked={closeFormData.mpu}
                               onChange={(e) => setCloseFormData({...closeFormData, mpu: e.target.checked})}
-                              className={`w-4 h-4 rounded border-gray-600 bg-gray-700 ${darkMode ? 'text-cyan-500 focus:ring-cyan-500' : 'text-cyan-500 focus:ring-cyan-500'} focus:ring-opacity-50`}
+                              className={`w-4 h-4 rounded border-gray-600 bg-black ${darkMode ? 'text-cyan-500 focus:ring-cyan-500' : 'text-cyan-500 focus:ring-cyan-500'} focus:ring-opacity-50`}
                             />
                             <label htmlFor="adder-mpu" className="ml-2 block theme-text-primary text-sm">
                               MPU ($3,500)
@@ -1747,7 +1747,7 @@ The set has been moved to Projects for commission tracking. You can now track mi
                               id="adder-hti"
                               checked={closeFormData.hti}
                               onChange={(e) => setCloseFormData({...closeFormData, hti: e.target.checked})}
-                              className={`w-4 h-4 rounded border-gray-600 bg-gray-700 ${darkMode ? 'text-cyan-500 focus:ring-cyan-500' : 'text-cyan-500 focus:ring-cyan-500'} focus:ring-opacity-50`}
+                              className={`w-4 h-4 rounded border-gray-600 bg-black ${darkMode ? 'text-cyan-500 focus:ring-cyan-500' : 'text-cyan-500 focus:ring-cyan-500'} focus:ring-opacity-50`}
                             />
                             <label htmlFor="adder-hti" className="ml-2 block theme-text-primary text-sm">
                               HTI ($2,500)
@@ -1759,7 +1759,7 @@ The set has been moved to Projects for commission tracking. You can now track mi
                               id="adder-reroof"
                               checked={closeFormData.reroof}
                               onChange={(e) => setCloseFormData({...closeFormData, reroof: e.target.checked})}
-                              className={`w-4 h-4 rounded border-gray-600 bg-gray-700 ${darkMode ? 'text-cyan-500 focus:ring-cyan-500' : 'text-cyan-500 focus:ring-cyan-500'} focus:ring-opacity-50`}
+                              className={`w-4 h-4 rounded border-gray-600 bg-black ${darkMode ? 'text-cyan-500 focus:ring-cyan-500' : 'text-cyan-500 focus:ring-cyan-500'} focus:ring-opacity-50`}
                             />
                             <label htmlFor="adder-reroof" className="ml-2 block theme-text-primary text-sm">
                               Reroof ($15,000)

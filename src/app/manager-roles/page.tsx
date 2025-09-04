@@ -750,7 +750,7 @@ export default function ManagerRoles() {
                       </div>
                     </div>
                     
-                    <div className="px-6 py-3 bg-gray-800 bg-opacity-50 border-t theme-border-primary flex justify-end gap-2">
+                    <div className="px-6 py-3 bg-gray-900 bg-opacity-50 border-t theme-border-primary flex justify-end gap-2">
                       {todo.status !== 'Completed' && (
                         <>
                           {todo.status === 'Pending' && (
@@ -772,7 +772,7 @@ export default function ManagerRoles() {
                       {todo.status === 'Completed' && (
                         <button
                           onClick={() => updateTodoStatus(todo.id, 'Pending')}
-                          className="px-3 py-1.5 text-sm rounded-lg bg-gray-700 theme-text-secondary hover:theme-text-primary transition-colors"
+                          className="px-3 py-1.5 text-sm rounded-lg bg-black theme-text-secondary hover:theme-text-primary transition-colors"
                         >
                           Reopen
                         </button>
@@ -872,11 +872,11 @@ export default function ManagerRoles() {
                 
                 {/* Selected attachments preview */}
                 {attachments.length > 0 && (
-                  <div className="p-3 border-t theme-border-primary bg-gray-800 bg-opacity-40">
+                  <div className="p-3 border-t theme-border-primary bg-gray-900 bg-opacity-40">
                     <div className="text-xs theme-text-secondary mb-2">Attachments:</div>
                     <div className="flex flex-wrap gap-2">
                       {attachments.map((file, index) => (
-                        <div key={index} className="flex items-center p-1.5 rounded-lg bg-gray-700 text-sm">
+                        <div key={index} className="flex items-center p-1.5 rounded-lg bg-black text-sm">
                           {getFileIcon(file.type)}
                           <span className="mx-2 max-w-[150px] truncate">{file.name}</span>
                           <button 

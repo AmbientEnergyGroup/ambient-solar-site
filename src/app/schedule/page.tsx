@@ -112,6 +112,14 @@ export default function Schedule() {
   const isSetter = () => {
     return userData?.role === 'setter' || user?.role === 'setter';
   };
+  
+  // Redirect setters away from this page
+  useEffect(() => {
+    if (!loading && user && isSetter() && !isCloser()) {
+      // Redirect setters to dashboard since they don't have access
+      window.location.href = '/dashboard';
+    }
+  }, [loading, user]);
 
   const canViewFullDetails = (set: ScheduleSet) => {
     // Managers can view all details
@@ -840,7 +848,7 @@ export default function Schedule() {
                     
                     <div className="ml-auto flex gap-2">
                       <button
-                        className={`px-3 py-2 rounded text-sm font-medium theme-text-primary border theme-border-primary ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-200'} transition-colors duration-200`}
+                        className={`px-3 py-2 rounded text-sm font-medium theme-text-primary border theme-border-primary ${darkMode ? 'hover:bg-black' : 'hover:bg-gray-200'} transition-colors duration-200`}
                       >
                         Export Schedule
                       </button>
@@ -867,19 +875,19 @@ export default function Schedule() {
                   <div className="flex space-x-2">
                     <button 
                       onClick={() => changeMonth(-1)}
-                      className={`p-2 rounded-full ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-200'} theme-text-primary transition-colors duration-200`}
+                      className={`p-2 rounded-full ${darkMode ? 'hover:bg-black' : 'hover:bg-gray-200'} theme-text-primary transition-colors duration-200`}
                     >
                       <ChevronLeft className="h-5 w-5" />
                     </button>
                     <button 
                       onClick={() => setCurrentMonthTimestamp(new Date().getTime())}
-                      className={`px-3 py-1 rounded ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'} theme-text-primary text-sm transition-colors duration-200`}
+                      className={`px-3 py-1 rounded ${darkMode ? 'bg-black hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'} theme-text-primary text-sm transition-colors duration-200`}
                     >
                       Today
                     </button>
                     <button 
                       onClick={() => changeMonth(1)}
-                      className={`p-2 rounded-full ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-200'} theme-text-primary transition-colors duration-200`}
+                      className={`p-2 rounded-full ${darkMode ? 'hover:bg-black' : 'hover:bg-gray-200'} theme-text-primary transition-colors duration-200`}
                     >
                       <ChevronRight className="h-5 w-5" />
                     </button>
@@ -1002,7 +1010,7 @@ export default function Schedule() {
                                 {set.utilityBill && (
                                   <button 
                                     onClick={() => handleViewDocuments(set)}
-                                    className={`px-3 py-1.5 text-xs ${darkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'} rounded transition-colors duration-200`}
+                                    className={`px-3 py-1.5 text-xs ${darkMode ? 'bg-black text-gray-200 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'} rounded transition-colors duration-200`}
                                   >
                                     Utility Bill
                                   </button>
@@ -1037,7 +1045,7 @@ export default function Schedule() {
                                 ) : (
                                   <button 
                                     onClick={() => handleAssignCloser(set)}
-                                    className="px-3 py-1.5 bg-gray-200 dark:bg-gray-700 rounded-full text-sm theme-text-secondary hover:theme-text-primary transition-colors duration-200"
+                                    className="px-3 py-1.5 bg-gray-200 dark:bg-black rounded-full text-sm theme-text-secondary hover:theme-text-primary transition-colors duration-200"
                                   >
                                     Assign Closer
                                   </button>
@@ -1166,7 +1174,7 @@ export default function Schedule() {
                       <input
                         id="close-verification"
                         type="checkbox"
-                        className={`w-5 h-5 rounded border-gray-600 bg-gray-700 ${darkMode ? 'text-amber-500 focus:ring-amber-500' : 'text-blue-500 focus:ring-blue-500'} focus:ring-opacity-50`}
+                        className={`w-5 h-5 rounded border-gray-600 bg-black ${darkMode ? 'text-amber-500 focus:ring-amber-500' : 'text-blue-500 focus:ring-blue-500'} focus:ring-opacity-50`}
                         checked={isClosedVerified}
                         onChange={(e) => setIsClosedVerified(e.target.checked)}
                       />
@@ -1241,7 +1249,7 @@ export default function Schedule() {
                               <input
                                 id={`adder-${adder.replace(/\s+/g, '-').toLowerCase()}`}
                                 type="checkbox"
-                                className={`rounded border-gray-600 bg-gray-700 ${darkMode ? 'text-amber-500 focus:ring-amber-500' : 'text-blue-500 focus:ring-blue-500'} focus:ring-opacity-50 mr-2`}
+                                className={`rounded border-gray-600 bg-black ${darkMode ? 'text-amber-500 focus:ring-amber-500' : 'text-blue-500 focus:ring-blue-500'} focus:ring-opacity-50 mr-2`}
                                 checked={closeFormData.adders.includes(adder)}
                                 onChange={() => handleAdderChange(adder)}
                               />

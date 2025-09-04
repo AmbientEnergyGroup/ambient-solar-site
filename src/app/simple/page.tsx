@@ -8,10 +8,10 @@ export default function SimplePage() {
   return (
     <main className="flex min-h-screen flex-col items-center relative">
       {/* Simple chalk grey background */}
-      <div className="absolute inset-0 z-0 bg-gray-700"></div>
+      <div className="absolute inset-0 z-0 bg-black"></div>
       
       {/* Header */}
-      <div className="w-full bg-gray-700 bg-opacity-80 py-4 sm:py-6 flex justify-center relative z-10">
+      <div className="w-full bg-black bg-opacity-80 py-4 sm:py-6 flex justify-center relative z-10">
         <div className="flex justify-center items-center w-full px-4">
           <h1 className="text-2xl font-bold text-white">Ambient Pro</h1>
         </div>
@@ -29,7 +29,7 @@ export default function SimplePage() {
             <input 
               type="email" 
               placeholder="Enter your email" 
-              className="w-full p-3 sm:p-2 border border-gray-600 rounded focus:outline-none focus:border-cyan-500 bg-gray-800 text-white placeholder-gray-500 text-base"
+              className="w-full p-3 sm:p-2 border border-gray-600 rounded focus:outline-none focus:border-cyan-500 bg-gray-900 text-white placeholder-gray-500 text-base"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />

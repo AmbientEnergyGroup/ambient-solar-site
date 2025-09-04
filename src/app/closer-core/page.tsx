@@ -34,10 +34,18 @@ export default function CloserCore() {
   const auth = useAuth();
   const { user, userData, loading: authLoading, signOut } = auth || {};
 
-  // Check if user is a closer or setter (setters can view but not interact)
+  // Check if user is a closer (only closers can access this page)
   const isCloser = user?.role === 'closer' || userData?.role === 'closer' || user?.role === 'admin';
   const isSetter = user?.role === 'setter' || userData?.role === 'setter';
   const canInteract = isCloser; // Only closers can interact, setters can only view
+  
+  // Redirect setters away from this page
+  useEffect(() => {
+    if (!authLoading && user && isSetter && !isCloser) {
+      // Redirect setters to dashboard since they don't have access
+      window.location.href = '/dashboard';
+    }
+  }, [authLoading, user, isSetter, isCloser]);
 
     // Set up real-time subscriptions to Firestore
   useEffect(() => {

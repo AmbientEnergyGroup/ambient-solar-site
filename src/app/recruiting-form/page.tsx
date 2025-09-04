@@ -186,7 +186,7 @@ export default function RecruitingForm() {
                       value={formData.referralName}
                       onChange={handleInputChange}
                       required
-                      className="p-3 w-full bg-gray-700 border border-gray-600 rounded-xl text-white focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all"
+                      className="p-3 w-full bg-black border border-gray-600 rounded-xl text-white focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all"
                       placeholder="John Doe"
                     />
                   </div>
@@ -200,7 +200,7 @@ export default function RecruitingForm() {
                       value={formData.referralEmail}
                       onChange={handleInputChange}
                       required
-                      className="p-3 w-full bg-gray-700 border border-gray-600 rounded-xl text-white focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all"
+                      className="p-3 w-full bg-black border border-gray-600 rounded-xl text-white focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all"
                       placeholder="john.doe@example.com"
                     />
                   </div>
@@ -214,7 +214,7 @@ export default function RecruitingForm() {
                       value={formData.referralPhone}
                       onChange={handleInputChange}
                       required
-                      className="p-3 w-full bg-gray-700 border border-gray-600 rounded-xl text-white focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all"
+                      className="p-3 w-full bg-black border border-gray-600 rounded-xl text-white focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all"
                       placeholder="(555) 123-4567"
                     />
                   </div>
@@ -227,7 +227,7 @@ export default function RecruitingForm() {
                       value={formData.relationship}
                       onChange={handleInputChange}
                       required
-                      className="p-3 w-full bg-gray-700 border border-gray-600 rounded-xl text-white focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all"
+                      className="p-3 w-full bg-black border border-gray-600 rounded-xl text-white focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all"
                     >
                       <option value="Friend">Friend</option>
                       <option value="Family">Family Member</option>
@@ -245,7 +245,7 @@ export default function RecruitingForm() {
                       value={formData.experience}
                       onChange={handleInputChange}
                       required
-                      className="p-3 w-full bg-gray-700 border border-gray-600 rounded-xl text-white focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all"
+                      className="p-3 w-full bg-black border border-gray-600 rounded-xl text-white focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all"
                     >
                       <option value="None">No Previous Experience</option>
                       <option value="Some">Some Experience (Less than 1 year)</option>
@@ -263,7 +263,7 @@ export default function RecruitingForm() {
                       onChange={handleInputChange}
                       required
                       rows={4}
-                      className="p-3 w-full bg-gray-700 border border-gray-600 rounded-xl text-white focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all"
+                      className="p-3 w-full bg-black border border-gray-600 rounded-xl text-white focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all"
                       placeholder="Tell us why you think your friend would be a good addition to our sales team..."
                     ></textarea>
                   </div>

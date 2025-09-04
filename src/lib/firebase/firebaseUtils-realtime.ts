@@ -480,3 +480,23 @@ export const subscribeToUserProjects = (
   
   return () => off(projectsRef, 'value', handleSnapshot);
 };
+
+// Get all projects from all users (for admin pipeline view)
+export const getAllProjects = async (): Promise<Project[]> => {
+  try {
+    const database = getFirebaseDB();
+    const snapshot = await get(query(ref(database, 'projects'), orderByChild('createdAt')));
+    
+    if (snapshot.exists()) {
+      const projects: Project[] = [];
+      snapshot.forEach((childSnapshot) => {
+        projects.push(childSnapshot.val());
+      });
+      return projects.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    }
+    return [];
+  } catch (error) {
+    console.error('Error getting all projects:', error);
+    throw error;
+  }
+};

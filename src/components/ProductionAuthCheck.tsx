@@ -84,7 +84,7 @@ export default function ProductionAuthCheck() {
   }, []);
 
   return (
-    <div className="p-3 sm:p-4 bg-gray-800 rounded-lg border border-gray-700">
+    <div className="p-3 sm:p-4 bg-gray-900 rounded-lg border border-gray-700">
       <h3 className="text-base sm:text-lg font-semibold text-white mb-3 sm:mb-4">Production Auth Status</h3>
       
       <div className="mb-4">
@@ -123,7 +123,7 @@ export default function ProductionAuthCheck() {
         </div>
       </div>
 
-      <div className="mt-4 p-3 bg-gray-700 rounded">
+      <div className="mt-4 p-3 bg-black rounded">
         <h4 className="text-white font-medium mb-2 text-sm sm:text-base">To Fix:</h4>
         <ol className="text-xs sm:text-sm text-gray-300 space-y-1 list-decimal list-inside">
           <li>Add Firebase environment variables to Vercel</li>

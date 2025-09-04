@@ -172,7 +172,7 @@ export default function GoogleSheetsImport({ onImport, userId }: GoogleSheetsImp
       {/* Modal */}
       {isOpen && (
         <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50 backdrop-blur-sm">
-          <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto`}>
+          <div className={`${darkMode ? 'bg-gray-900' : 'bg-white'} rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto`}>
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center">
@@ -223,7 +223,7 @@ export default function GoogleSheetsImport({ onImport, userId }: GoogleSheetsImp
                     onChange={handleInputChange}
                     onPaste={handleUrlPaste}
                     placeholder="https://docs.google.com/spreadsheets/d/... or spreadsheet ID"
-                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-black dark:text-white"
                   />
                 </div>
 
@@ -238,7 +238,7 @@ export default function GoogleSheetsImport({ onImport, userId }: GoogleSheetsImp
                     value={formData.range}
                     onChange={handleInputChange}
                     placeholder="A:Z"
-                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-black dark:text-white"
                   />
                 </div>
 
@@ -253,7 +253,7 @@ export default function GoogleSheetsImport({ onImport, userId }: GoogleSheetsImp
                     value={formData.clientEmail}
                     onChange={handleInputChange}
                     placeholder="your-service-account@project.iam.gserviceaccount.com"
-                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-black dark:text-white"
                   />
                 </div>
 
@@ -269,7 +269,7 @@ export default function GoogleSheetsImport({ onImport, userId }: GoogleSheetsImp
                       onChange={handleInputChange}
                       placeholder="-----BEGIN PRIVATE KEY-----..."
                       rows={6}
-                      className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white font-mono text-sm"
+                      className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-black dark:text-white font-mono text-sm"
                     />
                     <button
                       type="button"
@@ -336,7 +336,7 @@ export default function GoogleSheetsImport({ onImport, userId }: GoogleSheetsImp
                 <div className="flex justify-end space-x-3 pt-4">
                   <button
                     onClick={() => setIsOpen(false)}
-                    className="px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+                    className="px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-black"
                   >
                     Cancel
                   </button>

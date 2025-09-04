@@ -33,9 +33,60 @@ export interface UserData {
   team?: 'Team A' | 'Team B' | 'Team C' | 'Team D';
   region?: 'Region A' | 'Region B' | 'Region C' | 'Region D';
   payType?: 'Rookie' | 'Vet' | 'Pro';
+  managerType?: 'Team Lead' | 'Manager' | 'Area Manager' | 'Regional';
+  operationsPrivilege?: boolean;
+  organizationBuildingPrivileges?: boolean;
+  // Upline management hierarchy
+  teamLead?: {
+    name: string;
+    email: string;
+    phone: string;
+  };
+  manager?: {
+    name: string;
+    email: string;
+    phone: string;
+  };
+  areaManager?: {
+    name: string;
+    email: string;
+    phone: string;
+  };
+  regional?: {
+    name: string;
+    email: string;
+    phone: string;
+  };
+  // Organizational hierarchy tracking
+  directReports?: string[]; // Array of user IDs who report directly to this user
+  managerId?: string; // ID of the user's direct manager
+  managerName?: string; // Name of the user's direct manager
+  managerEmail?: string; // Email of the user's direct manager
+  recruitedBy?: string; // ID of the user who recruited this user
+  recruitedByName?: string; // Name of the user who recruited this user
+  recruitedByEmail?: string; // Email of the user who recruited this user
+  teamSize?: number; // Total number of people under this user (including indirect reports)
+  directTeamSize?: number; // Number of direct reports
+  // Notification preferences
+  notificationPreferences?: {
+    email: {
+      dealUpdates: boolean;
+      commissionPayments: boolean;
+      teamActivity: boolean;
+      systemUpdates: boolean;
+    };
+    push: {
+      realTimeAlerts: boolean;
+      goalAchievements: boolean;
+    };
+    sms: {
+      criticalAlerts: boolean;
+      paymentConfirmations: boolean;
+    };
+    frequency: 'immediate' | 'daily' | 'weekly' | 'monthly';
+  };
   createdAt: string;
   updatedAt?: string;
-  managerId?: string;
   active: boolean;
   dealCount: number;
   totalCommission: number;
@@ -479,6 +530,26 @@ export const subscribeToUserProjects = (
   onValue(projectsRef, handleSnapshot);
   
   return () => off(projectsRef, 'value', handleSnapshot);
+};
+
+// Get all projects from all users (for admin pipeline view)
+export const getAllProjects = async (): Promise<Project[]> => {
+  try {
+    const database = getFirebaseDB();
+    const snapshot = await get(query(ref(database, 'projects'), orderByChild('createdAt')));
+    
+    if (snapshot.exists()) {
+      const projects: Project[] = [];
+      snapshot.forEach((childSnapshot) => {
+        projects.push(childSnapshot.val());
+      });
+      return projects.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    }
+    return [];
+  } catch (error) {
+    console.error('Error getting all projects:', error);
+    throw error;
+  }
 };
 
 // ===== ADDITIONAL FUNCTIONS FOR AUTHCONTEXT =====

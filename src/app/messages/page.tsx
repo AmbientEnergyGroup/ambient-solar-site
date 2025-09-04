@@ -356,11 +356,11 @@ export default function MessagesPage() {
               
               {/* Selected attachments preview */}
               {attachments.length > 0 && (
-                <div className="p-3 border-t theme-border-primary bg-gray-800 bg-opacity-40">
+                <div className="p-3 border-t theme-border-primary bg-gray-900 bg-opacity-40">
                   <div className="text-xs theme-text-secondary mb-2">Attachments:</div>
                   <div className="flex flex-wrap gap-2">
                     {attachments.map((file, index) => (
-                      <div key={index} className="flex items-center p-1.5 rounded-lg bg-gray-700 text-sm">
+                      <div key={index} className="flex items-center p-1.5 rounded-lg bg-black text-sm">
                         {getFileIcon(file.type)}
                         <span className="mx-2 max-w-[150px] truncate">{file.name}</span>
                         <button 

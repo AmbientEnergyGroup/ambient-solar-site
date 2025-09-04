@@ -54,10 +54,10 @@ body {
 /* Dark Theme - Default */
 body.dark-theme,
 body {
-  --bg-primary: #3d4852; /* chalk grey tertiary - consistent backdrop */
-  --bg-secondary: #3d4852; /* chalk grey tertiary - consistent backdrop */
-  --bg-tertiary: #3d4852; /* chalk grey tertiary - consistent backdrop */
-  --bg-quaternary: #4a5568; /* chalk grey quaternary */
+  --bg-primary: #000000; /* pure black */
+  --bg-secondary: #000000; /* pure black */
+  --bg-tertiary: #000000; /* pure black */
+  --bg-quaternary: #000000; /* pure black */
   
   --text-primary: #ffffff;
   --text-secondary: #e2e8f0; /* light grey text */
@@ -245,7 +245,7 @@ body {
 @layer components {
   /* Card styling */
   .card {
-    @apply bg-gray-700 border border-blue-600 rounded-xl shadow-lg overflow-hidden transition-all duration-200;
+    @apply bg-black border border-blue-600 rounded-xl shadow-lg overflow-hidden transition-all duration-200;
   }
   
   .card:hover {
