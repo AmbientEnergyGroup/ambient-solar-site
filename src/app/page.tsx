@@ -173,7 +173,7 @@ export default function Home() {
               {/* Contact admin note */}
               <div className="mt-4 sm:mt-6 text-center">
                 <p className="text-gray-400 text-xs sm:text-sm">
-                  Need an account? Contact your administrator.
+                  Access is by invitation only. Contact your administrator for an invitation.
                 </p>
               </div>
             </>

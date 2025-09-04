@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
+import { addInvitedEmail } from '../check-invitation/route';
 
 export async function POST(request: NextRequest) {
   try {
@@ -150,6 +151,9 @@ If you believe you received this email in error, please contact support.
         to: email,
         subject: mailOptions.subject
       });
+
+      // Add email to invited list
+      addInvitedEmail(email);
 
       return NextResponse.json({
         success: true,

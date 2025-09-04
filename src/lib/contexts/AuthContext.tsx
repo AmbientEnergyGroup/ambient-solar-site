@@ -362,6 +362,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       
+      // Check if user is invited before allowing access
+      const response = await fetch('/api/check-invitation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: result.user.email }),
+      });
+      
+      const invitationResult = await response.json();
+      
+      if (!response.ok || !invitationResult.invited) {
+        // Sign out the user if they're not invited
+        await firebaseSignOut(auth);
+        throw new Error('You must be invited to access this site. Please contact your administrator for an invitation.');
+      }
+      
       // Check if user exists in our database
       const existingUser = await getUserData(result.user.uid);
       if (!existingUser) {
@@ -426,6 +441,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!hasRealFirebaseConfig) {
       console.log('⚠️ Firebase not configured - email sign-in not available');
       throw new Error('Authentication not available. Please contact your administrator.');
+    }
+
+    // Check if user is in the invited users list
+    try {
+      const response = await fetch('/api/check-invitation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      
+      const result = await response.json();
+      
+      if (!response.ok || !result.invited) {
+        throw new Error('You must be invited to access this site. Please contact your administrator for an invitation.');
+      }
+    } catch (error) {
+      console.error('Error checking invitation:', error);
+      throw new Error('You must be invited to access this site. Please contact your administrator for an invitation.');
     }
 
     try {
