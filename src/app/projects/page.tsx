@@ -36,6 +36,28 @@ import {
   Project as SharedProject 
 } from "@/lib/utils/commissionCalculations";
 
+// Helper function to clear old project data from localStorage
+const clearOldProjectData = (userId: string) => {
+  try {
+    // Clear all project-related localStorage items for this user
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (key.includes(`projectState_${userId}`) || 
+                  key.includes(`projects_${userId}`) || 
+                  key.includes(`userProjects_${userId}`) ||
+                  key.includes(`projectCache_${userId}`))) {
+        keysToRemove.push(key);
+      }
+    }
+    
+    keysToRemove.forEach(key => localStorage.removeItem(key));
+    console.log(`Cleared ${keysToRemove.length} old project data items for user ${userId}`);
+  } catch (error) {
+    console.error('Error clearing old project data:', error);
+  }
+};
+
 // Interface for project data
 interface Project {
   id: string;
@@ -716,10 +738,10 @@ export default function Projects() {
       setProjects(filteredProjects);
       setCancelledProjects(filteredCancelledProjects);
       
-      // Save to project state for quicker loading next time
+      // Save to project state for quicker loading next time (with data optimization)
       const projectState = {
-        projects: filteredProjects,
-        cancelledProjects: filteredCancelledProjects,
+        projects: filteredProjects.slice(0, 50), // Limit to last 50 projects
+        cancelledProjects: filteredCancelledProjects.slice(0, 20), // Limit to last 20 cancelled
         stats: {
           dealCount,
           tier1Deals,
@@ -730,10 +752,26 @@ export default function Projects() {
           totalRevenue,
           avgSystemSize,
           avgContractValue
-        }
+        },
+        lastUpdated: new Date().toISOString()
       };
       
-      localStorage.setItem(`projectState_${user.uid}`, JSON.stringify(projectState));
+      try {
+        localStorage.setItem(`projectState_${user.uid}`, JSON.stringify(projectState));
+      } catch (error) {
+        if (error.name === 'QuotaExceededError') {
+          console.warn('localStorage quota exceeded, clearing old data and retrying...');
+          // Clear old project data and retry
+          clearOldProjectData(user.uid);
+          try {
+            localStorage.setItem(`projectState_${user.uid}`, JSON.stringify(projectState));
+          } catch (retryError) {
+            console.error('Failed to save project state after cleanup:', retryError);
+          }
+        } else {
+          console.error('Error saving project state:', error);
+        }
+      }
     }
     
     console.log("===== END DEBUGGING PROJECTS =====");
@@ -743,6 +781,13 @@ export default function Projects() {
   useEffect(() => {
     console.log("Projects effect running - user:", user?.uid);
     if (user) {
+      // Proactively clear old data to prevent quota exceeded errors
+      try {
+        clearOldProjectData(user.uid);
+      } catch (error) {
+        console.warn('Error during proactive cleanup:', error);
+      }
+      
       // Check for force refresh flag
       const forceRefresh = localStorage.getItem('forceProjectsRefresh');
       if (forceRefresh === 'true') {
@@ -1081,10 +1126,16 @@ export default function Projects() {
           if (cachedState) {
             try {
               const parsed = JSON.parse(cachedState);
-              parsed.projects = filteredProjects;
+              parsed.projects = filteredProjects.slice(0, 50); // Limit to last 50 projects
+              parsed.lastUpdated = new Date().toISOString();
               localStorage.setItem(projectStateKey, JSON.stringify(parsed));
             } catch (e) {
-              console.error("Error updating cached project state:", e);
+              if (e.name === 'QuotaExceededError') {
+                console.warn('localStorage quota exceeded, clearing old data...');
+                clearOldProjectData(user.uid);
+              } else {
+                console.error("Error updating cached project state:", e);
+              }
             }
           }
         }
