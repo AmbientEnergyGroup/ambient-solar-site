@@ -107,6 +107,15 @@ If you believe you received this email in error, please contact support.
       html: htmlContent
     };
 
+    // Debug environment variables
+    console.log('Environment check:', {
+      hasEmailPass: !!process.env.EMAIL_PASS,
+      hasEmailUser: !!process.env.EMAIL_USER,
+      emailPassLength: process.env.EMAIL_PASS?.length || 0,
+      nodeEnv: process.env.NODE_ENV,
+      allEmailKeys: Object.keys(process.env).filter(key => key.includes('EMAIL'))
+    });
+
     // If no email password is configured, log the email instead
     if (!process.env.EMAIL_PASS || process.env.EMAIL_PASS === 'your-app-password-here') {
       console.log('Email password not configured. Email would be sent:', {
@@ -117,7 +126,8 @@ If you believe you received this email in error, please contact support.
         role,
         office,
         recruitedBy,
-        hasEmailPass: !!process.env.EMAIL_PASS
+        hasEmailPass: !!process.env.EMAIL_PASS,
+        emailPassValue: process.env.EMAIL_PASS ? 'Set (hidden)' : 'Not set'
       });
       
       return NextResponse.json({
@@ -125,7 +135,9 @@ If you believe you received this email in error, please contact support.
         message: `Email invitation prepared for ${name} at ${email} (password not configured - check console)`,
         debug: {
           from: 'support@ambientenergygroup.com',
-          hasEmailPass: !!process.env.EMAIL_PASS
+          hasEmailPass: !!process.env.EMAIL_PASS,
+          emailPassValue: process.env.EMAIL_PASS ? 'Set (hidden)' : 'Not set',
+          allEmailKeys: Object.keys(process.env).filter(key => key.includes('EMAIL'))
         }
       });
     }
