@@ -27,8 +27,6 @@ const nextConfig = {
     optimizeCss: true,
     // Faster builds
     esmExternals: true,
-    // Suppress viewport/themeColor warnings
-    suppressHydrationWarning: true,
   },
   
   // Reduce compilation time
