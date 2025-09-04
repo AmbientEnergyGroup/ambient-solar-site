@@ -64,6 +64,11 @@ const nextConfig = {
     // Optimize bundle size
     config.optimization.minimize = true;
     
+    // Suppress metadata warnings
+    config.infrastructureLogging = {
+      level: 'error',
+    };
+    
     return config;
   },
   
@@ -98,6 +103,7 @@ const nextConfig = {
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
   },
+  
   
 };
 
