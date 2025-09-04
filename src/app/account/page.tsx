@@ -9,6 +9,7 @@ import MessagesButton from "@/components/MessagesButton";
 import Sidebar from "@/components/Sidebar";
 import UserProfile from '../../components/UserProfile';
 import AuthDiagnostic from '../../components/AuthDiagnostic';
+import RepAgreement from '../../components/RepAgreement';
 
 export default function AccountPage() {
   const auth = useAuth();
@@ -82,6 +83,7 @@ export default function AccountPage() {
 
         {/* Account content */}
         <main className="p-4 sm:p-6 pt-20 sm:pt-24">
+          <RepAgreement />
           <UserProfile />
           <AuthDiagnostic />
         </main>

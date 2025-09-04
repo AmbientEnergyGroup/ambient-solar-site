@@ -4,7 +4,7 @@ import { addInvitedEmail } from '../check-invitation/route';
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, email, role, office, recruitedBy } = await request.json();
+    const { name, email, role, office, recruitedBy, addendum } = await request.json();
 
     // Validate required fields
     if (!name || !email || !role || !office || !recruitedBy) {
@@ -155,10 +155,37 @@ If you believe you received this email in error, please contact support.
       // Add email to invited list
       addInvitedEmail(email);
 
+      // Send DocuSign agreement
+      let agreementResult = { success: true, envelopeId: null };
+      try {
+        const agreementResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/docusign/send-agreement`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name,
+            email,
+            addendum: addendum || ''
+          })
+        });
+        
+        if (agreementResponse.ok) {
+          agreementResult = await agreementResponse.json();
+          console.log('✅ DocuSign agreement sent:', agreementResult.envelopeId);
+        } else {
+          console.log('⚠️ DocuSign agreement failed, but invitation sent');
+        }
+      } catch (agreementError) {
+        console.log('⚠️ DocuSign agreement error (non-blocking):', agreementError);
+      }
+
       return NextResponse.json({
         success: true,
         message: `Invitation sent to ${name} at ${email} from support@ambientenergygroup.com`,
-        messageId: info.messageId
+        messageId: info.messageId,
+        agreementSent: agreementResult.success,
+        envelopeId: agreementResult.envelopeId
       });
     } catch (emailError) {
       console.error('Email sending failed:', emailError);

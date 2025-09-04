@@ -36,7 +36,8 @@ export default function Team() {
     email: '',
     role: 'Sales Rep',
     office: 'Fresno',
-    recruitedBy: ''
+    recruitedBy: '',
+    addendum: ''
   });
   const [showRepInfo, setShowRepInfo] = useState(false);
   const [selectedRepInfo, setSelectedRepInfo] = useState<{
@@ -203,7 +204,7 @@ export default function Team() {
   }, [isClient]);
 
   // Handle form input changes
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setNewRepData(prev => ({
       ...prev,
@@ -237,7 +238,8 @@ export default function Team() {
         email: '',
         role: 'Sales Rep',
         office: 'Fresno',
-        recruitedBy: ''
+        recruitedBy: '',
+        addendum: ''
       });
       setShowAddRepForm(false);
       
@@ -612,6 +614,24 @@ export default function Team() {
                               </option>
                             ))}
                           </select>
+                        </div>
+                        
+                        {/* Addendum Field */}
+                        <div>
+                          <label className="block text-sm font-medium theme-text-secondary mb-1">
+                            Addendum (Optional)
+                          </label>
+                          <textarea
+                            name="addendum"
+                            value={newRepData.addendum}
+                            onChange={handleFormChange}
+                            rows={4}
+                            className="w-full px-3 py-2 border theme-border-primary rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500 theme-bg-quaternary theme-text-primary resize-vertical"
+                            placeholder="Enter any specific terms, changes, or additions to the standard rep agreement..."
+                          />
+                          <p className="text-xs text-gray-500 mt-1">
+                            This will be added to the bottom of the rep agreement for signature.
+                          </p>
                         </div>
                         
                         {/* Form Actions */}
