@@ -27,6 +27,8 @@ const nextConfig = {
     optimizeCss: true,
     // Faster builds
     esmExternals: true,
+    // Suppress viewport/themeColor warnings
+    suppressHydrationWarning: true,
   },
   
   // Reduce compilation time
@@ -96,6 +98,7 @@ const nextConfig = {
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
   },
+  
 };
 
 module.exports = nextConfig; 
