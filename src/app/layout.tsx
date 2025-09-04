@@ -65,6 +65,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://firebase.googleapis.com" />
         <link rel="preconnect" href="https://maps.googleapis.com" />
       </head>
+      {/* Force deployment update - Black background applied */}
       <body className="min-h-screen bg-black font-orbitron antialiased">
         {/* Performance Optimizer - runs in background */}
         <PerformanceOptimizer />
