@@ -143,8 +143,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setUserData(data);
           }
         } else {
-          // If no user data exists, create default user data
-          console.log('No user data found, creating default user data');
+          // If no user data exists, create default user data with clean slate
+          console.log('No user data found, creating clean slate user data');
           const defaultRole = firebaseUser.email === 'support@ambientenergygroup.com' ? 'admin' : 'setter';
           const defaultUserData: UserData = {
             id: firebaseUser.uid,
@@ -158,8 +158,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             active: true,
             dealCount: 0,
             totalCommission: 0,
-            recentProjects: [],
-            commissionPayments: [],
+            recentProjects: [], // Clean slate - no existing projects
+            commissionPayments: [], // Clean slate - no existing payments
             settings: {
               notifications: true,
               theme: 'auto',
@@ -171,6 +171,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           try {
             await createUserData(firebaseUser, { role: defaultRole });
             setUserData(defaultUserData);
+            console.log('✅ Clean slate user data created successfully');
           } catch (createError) {
             console.error('Error creating user data:', createError);
             // Still set the default data locally so the UI works
@@ -181,7 +182,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.error('❌ Error fetching user data:', error);
         console.log('🔄 Creating fallback user data...');
         
-        // Create fallback user data so the UI doesn't break
+        // Create fallback user data so the UI doesn't break - clean slate
         const fallbackRole = firebaseUser.email === 'support@ambientenergygroup.com' ? 'admin' : 'setter';
         const fallbackUserData: UserData = {
           id: firebaseUser.uid,
@@ -195,8 +196,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           active: true,
           dealCount: 0,
           totalCommission: 0,
-          recentProjects: [],
-          commissionPayments: [],
+          recentProjects: [], // Clean slate - no existing projects
+          commissionPayments: [], // Clean slate - no existing payments
           settings: {
             notifications: true,
             theme: 'auto',
@@ -204,7 +205,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         };
         setUserData(fallbackUserData);
-        console.log('✅ Fallback user data set');
+        console.log('✅ Clean slate fallback user data set');
       }
     } else {
       console.log('🔄 User logged out, clearing data');
@@ -380,7 +381,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Check if user exists in our database
       const existingUser = await getUserData(result.user.uid);
       if (!existingUser) {
-        // Create new user data
+        // Create new user data with clean slate
+        console.log('Creating new user with clean slate');
         await createUserData(result.user, { role: 'setter' });
       }
     } catch (error: any) {
