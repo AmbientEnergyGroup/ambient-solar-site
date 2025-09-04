@@ -141,6 +141,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
           } else {
             setUserData(data);
+            
+            // Save to localStorage for UserProfile component
+            const userProfileKey = `userProfile_${firebaseUser.uid}`;
+            const profileData = {
+              ...data,
+              userId: firebaseUser.uid,
+              email: firebaseUser.email,
+              updatedAt: new Date().toISOString()
+            };
+            localStorage.setItem(userProfileKey, JSON.stringify(profileData));
+            console.log('✅ Existing user data loaded and saved to localStorage');
           }
         } else {
           // If no user data exists, create default user data with clean slate
@@ -171,11 +182,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           try {
             await createUserData(firebaseUser, { role: defaultRole });
             setUserData(defaultUserData);
-            console.log('✅ Clean slate user data created successfully');
+            
+            // Save to localStorage for UserProfile component
+            const userProfileKey = `userProfile_${firebaseUser.uid}`;
+            const profileData = {
+              ...defaultUserData,
+              userId: firebaseUser.uid,
+              email: firebaseUser.email,
+              updatedAt: new Date().toISOString()
+            };
+            localStorage.setItem(userProfileKey, JSON.stringify(profileData));
+            console.log('✅ Clean slate user data created and saved to localStorage');
           } catch (createError) {
             console.error('Error creating user data:', createError);
             // Still set the default data locally so the UI works
             setUserData(defaultUserData);
+            
+            // Save to localStorage even if Firebase fails
+            const userProfileKey = `userProfile_${firebaseUser.uid}`;
+            const profileData = {
+              ...defaultUserData,
+              userId: firebaseUser.uid,
+              email: firebaseUser.email,
+              updatedAt: new Date().toISOString()
+            };
+            localStorage.setItem(userProfileKey, JSON.stringify(profileData));
+            console.log('✅ Clean slate user data saved to localStorage (Firebase failed)');
           }
         }
       } catch (error) {
@@ -205,7 +237,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         };
         setUserData(fallbackUserData);
-        console.log('✅ Clean slate fallback user data set');
+        
+        // Save to localStorage for UserProfile component
+        const userProfileKey = `userProfile_${firebaseUser.uid}`;
+        const profileData = {
+          ...fallbackUserData,
+          userId: firebaseUser.uid,
+          email: firebaseUser.email,
+          updatedAt: new Date().toISOString()
+        };
+        localStorage.setItem(userProfileKey, JSON.stringify(profileData));
+        console.log('✅ Clean slate fallback user data set and saved to localStorage');
       }
     } else {
       console.log('🔄 User logged out, clearing data');
@@ -383,7 +425,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!existingUser) {
         // Create new user data with clean slate
         console.log('Creating new user with clean slate');
-        await createUserData(result.user, { role: 'setter' });
+        const newUserData = await createUserData(result.user, { role: 'setter' });
+        
+        // Save to localStorage for UserProfile component
+        const userProfileKey = `userProfile_${result.user.uid}`;
+        const profileData = {
+          ...newUserData,
+          userId: result.user.uid,
+          email: result.user.email,
+          updatedAt: new Date().toISOString()
+        };
+        localStorage.setItem(userProfileKey, JSON.stringify(profileData));
+        console.log('✅ New user data created and saved to localStorage');
+      } else {
+        // Save existing user data to localStorage
+        const userProfileKey = `userProfile_${result.user.uid}`;
+        const profileData = {
+          ...existingUser,
+          userId: result.user.uid,
+          email: result.user.email,
+          updatedAt: new Date().toISOString()
+        };
+        localStorage.setItem(userProfileKey, JSON.stringify(profileData));
+        console.log('✅ Existing user data saved to localStorage');
       }
     } catch (error: any) {
       console.error('Error signing in with Google:', error);
