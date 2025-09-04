@@ -47,7 +47,7 @@ export default function Sidebar({ signOut, darkMode, sidebarOpen, setSidebarOpen
   };
   
   return (
-    <div className={`${sidebarOpen ? 'w-64' : 'w-0'} theme-bg-tertiary shadow-md transition-all duration-300 overflow-hidden flex flex-col h-full z-50`}>
+    <div className={`${sidebarOpen ? 'w-64' : 'w-0'} theme-bg-tertiary shadow-md transition-all duration-300 overflow-hidden flex flex-col h-screen z-50 fixed left-0 top-0`}>
       <div className="p-4 border-b theme-border-secondary flex-shrink-0">
         {sidebarOpen ? (
           <div className="flex items-center">
@@ -62,8 +62,8 @@ export default function Sidebar({ signOut, darkMode, sidebarOpen, setSidebarOpen
         )}
       </div>
       
-      <div className="flex-1 overflow-y-auto">
-        <nav className="py-4">
+      <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
+        <nav className="py-4 space-y-1">
           {/* Dashboard - Always at top */}
           <a href="/dashboard" className={`flex items-center px-4 py-3 ${
             pathname === '/dashboard' 

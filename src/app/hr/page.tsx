@@ -1034,7 +1034,7 @@ export default function HRPage() {
           </div>
         </header>
 
-        <div className="flex-1 overflow-auto theme-bg-secondary">
+        <div className={`flex-1 overflow-auto theme-bg-secondary transition-all duration-300 ${sidebarOpen ? 'ml-64' : 'ml-0'}`}>
           <div className="p-6">
             {/* Pay Type Display */}
             <div className="mb-6">

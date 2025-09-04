@@ -75,7 +75,7 @@ export default function AstroPage() {
         setSidebarOpen={setSidebarOpen} 
       />
       
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ${sidebarOpen ? 'ml-64' : 'ml-0'}`}>
         {/* Header */}
         <header className="bg-black border-b border-gray-600 px-6 py-4 flex-shrink-0">
           <div className="flex items-center justify-between">

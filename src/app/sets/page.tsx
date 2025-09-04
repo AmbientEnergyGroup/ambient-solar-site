@@ -1278,7 +1278,7 @@ The set has been moved to Projects for commission tracking. You can now track mi
           />
 
           {/* Main content */}
-          <div className="flex-1 overflow-auto theme-bg-secondary">
+          <div className={`flex-1 overflow-auto theme-bg-secondary transition-all duration-300 ${sidebarOpen ? 'ml-64' : 'ml-0'}`}>
             {/* Header */}
             <header className="theme-bg-secondary shadow-sm border-b theme-border-primary">
               <div className="px-6 py-4">

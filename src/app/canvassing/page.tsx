@@ -1129,7 +1129,7 @@ export default function Canvassing() {
           />
 
           {/* Main content */}
-          <div className="flex-1 overflow-auto theme-bg-secondary">
+          <div className={`flex-1 overflow-auto theme-bg-secondary transition-all duration-300 ${sidebarOpen ? 'ml-64' : 'ml-0'}`}>
             {/* Header */}
             <header className="standard-header">
               <div className="standard-header-content">

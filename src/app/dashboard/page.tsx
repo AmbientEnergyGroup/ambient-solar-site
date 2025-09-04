@@ -261,7 +261,7 @@ export default function Dashboard() {
       />
 
       {/* Main content */}
-      <div className="flex-1 overflow-auto theme-bg-secondary">
+      <div className={`flex-1 overflow-auto theme-bg-secondary transition-all duration-300 ${sidebarOpen ? 'ml-64' : 'ml-0'}`}>
         {/* Header with toggle button */}
         <header className={`standard-header fixed top-0 z-50 transition-all duration-300 ${
           headerVisible ? 'translate-y-0' : '-translate-y-full'
