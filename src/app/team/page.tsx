@@ -322,8 +322,8 @@ export default function Team() {
 
   // Filter team members based on Direct vs Downline and Active vs Inactive
   const getFilteredTeamMembers = () => {
-    // Use real team data from Firebase
-    let allTeamMembers = teamMembers.map((member: any) => ({
+    // Use real team data from Firebase only - no fake users
+    const allTeamMembers = teamMembers.map((member: any) => ({
       id: member.id,
       name: member.displayName,
       email: member.email,
@@ -335,86 +335,6 @@ export default function Team() {
       performance: repPerformance[member.displayName] || 0,
       isDirect: true // All team members are direct reports
     }));
-
-    // Fallback to sample data if no real data
-    if (allTeamMembers.length === 0) {
-      const sampleTeamMembers = [
-      {
-        id: '1',
-        name: 'John Doe',
-        email: 'john.doe@example.com',
-        phone: '(555) 123-4567',
-        role: 'Manager',
-        mr: 'Development User', // Recruited by current user
-        status: 'Active',
-        isActive: true,
-        performance: repPerformance['John Doe'] || 0,
-        isDirect: true // Direct report - recruited by current user
-      },
-      {
-        id: '2',
-        name: 'Sarah Johnson',
-        email: 'sarah.j@example.com',
-        phone: '(555) 234-5678',
-        role: 'Sales Rep',
-        mr: 'Development User', // Recruited by current user
-        status: 'Active',
-        isActive: true,
-        performance: repPerformance['Sarah Johnson'] || 0,
-        isDirect: true // Direct report - recruited by current user
-      },
-      {
-        id: '3',
-        name: 'Mike Wilson',
-        email: 'mike.w@example.com',
-        phone: '(555) 345-6789',
-        role: 'Sales Rep',
-        mr: 'John Doe', // Recruited by John Doe
-        status: 'Pending',
-        isActive: true,
-        performance: repPerformance['Mike Wilson'] || 0,
-        isDirect: false // Downline - recruited by John Doe, not current user
-      },
-      {
-        id: '4',
-        name: 'Emily Chen',
-        email: 'emily.c@example.com',
-        phone: '(555) 456-7890',
-        role: 'Sales Rep',
-        mr: 'Sarah Johnson', // Recruited by Sarah Johnson
-        status: 'Active',
-        isActive: true,
-        performance: repPerformance['Emily Chen'] || 0,
-        isDirect: false // Downline - recruited by Sarah Johnson, not current user
-      },
-      {
-        id: '5',
-        name: 'Tom Rodriguez',
-        email: 'tom.r@example.com',
-        phone: '(555) 567-8901',
-        role: 'Sales Rep',
-        mr: 'Development User', // Recruited by current user
-        status: 'Inactive',
-        isActive: false,
-        performance: repPerformance['Tom Rodriguez'] || 0,
-        isDirect: true // Direct report - recruited by current user
-      },
-      {
-        id: '6',
-        name: 'Lisa Park',
-        email: 'lisa.p@example.com',
-        phone: '(555) 678-9012',
-        role: 'Sales Rep',
-        mr: 'John Doe', // Recruited by John Doe
-        status: 'Inactive',
-        isActive: false,
-        performance: repPerformance['Lisa Park'] || 0,
-        isDirect: false // Downline - recruited by John Doe, not current user
-      }
-    ];
-    
-    allTeamMembers = sampleTeamMembers;
-    }
 
     let filteredMembers = allTeamMembers;
 
@@ -855,7 +775,35 @@ export default function Team() {
                     </tr>
                   </thead>
                   <tbody className="divide-y theme-border-secondary">
-                    {getFilteredTeamMembers().map((member, index) => (
+                    {loadingTeamMembers ? (
+                      <tr>
+                        <td colSpan={6} className="px-6 py-12 text-center">
+                          <div className="flex flex-col items-center">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-500 mb-4"></div>
+                            <p className="text-sm theme-text-secondary">Loading team members...</p>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : getFilteredTeamMembers().length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="px-6 py-12 text-center">
+                          <div className="flex flex-col items-center">
+                            <Users className="h-12 w-12 theme-text-secondary mb-4" />
+                            <h3 className="text-lg font-medium theme-text-primary mb-2">No team members yet</h3>
+                            <p className="text-sm theme-text-secondary mb-4">
+                              Start building your team by adding new representatives.
+                            </p>
+                            <button
+                              onClick={() => setShowAddRepForm(true)}
+                              className="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-md font-medium transition-colors duration-200"
+                            >
+                              Add Your First Rep
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : (
+                      getFilteredTeamMembers().map((member, index) => (
                       <tr key={index} className="hover:theme-bg-quaternary">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
@@ -917,7 +865,8 @@ export default function Team() {
                           </button>
                         </td>
                       </tr>
-                    ))}
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
