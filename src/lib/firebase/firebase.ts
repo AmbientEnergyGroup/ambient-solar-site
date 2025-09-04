@@ -18,6 +18,9 @@ let auth: any;
 let database: any;
 let storage: any;
 
+// Track if we've already shown the warning
+let hasShownFirebaseWarning = false;
+
 // Lazy initialization function
 const initializeFirebase = () => {
   if (!app) {
@@ -25,9 +28,11 @@ const initializeFirebase = () => {
     const hasRealConfig = process.env.NEXT_PUBLIC_FIREBASE_API_KEY && 
                          process.env.NEXT_PUBLIC_FIREBASE_API_KEY !== "your_firebase_api_key_here";
     
-    if (!hasRealConfig) {
+    // Only show warning once per session
+    if (!hasRealConfig && !hasShownFirebaseWarning) {
       console.warn('⚠️ Firebase not configured. Using demo values. Please set up Firebase environment variables.');
       console.warn('📖 See FIREBASE_SETUP_GUIDE.md for setup instructions.');
+      hasShownFirebaseWarning = true;
     }
     
     if (!getApps().length) {

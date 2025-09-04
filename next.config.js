@@ -23,6 +23,19 @@ const nextConfig = {
         },
       },
     },
+    // Reduce bundle size
+    optimizeCss: true,
+    // Faster builds
+    esmExternals: true,
+  },
+  
+  // Reduce compilation time
+  typescript: {
+    ignoreBuildErrors: false,
+  },
+  
+  eslint: {
+    ignoreDuringBuilds: false,
   },
   
   // Simple webpack optimization

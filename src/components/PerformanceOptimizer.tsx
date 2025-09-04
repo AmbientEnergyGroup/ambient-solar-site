@@ -137,36 +137,41 @@ export default function PerformanceOptimizer() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    // Monitor long tasks
-    const observer = new PerformanceObserver((list) => {
-      for (const entry of list.getEntries()) {
-        if (entry.duration > 50) { // Tasks longer than 50ms
-          console.warn('Long task detected:', entry);
+    let observer: PerformanceObserver | null = null;
+    let navigationObserver: PerformanceObserver | null = null;
+
+    // Monitor long tasks (only in development)
+    if (process.env.NODE_ENV === 'development') {
+      observer = new PerformanceObserver((list) => {
+        for (const entry of list.getEntries()) {
+          if (entry.duration > 50) { // Tasks longer than 50ms
+            console.warn('Long task detected:', entry);
+          }
         }
-      }
-    });
+      });
 
-    observer.observe({ entryTypes: ['longtask'] });
+      observer.observe({ entryTypes: ['longtask'] });
 
-    // Monitor navigation timing
-    const navigationObserver = new PerformanceObserver((list) => {
-      for (const entry of list.getEntries()) {
-        if (entry.entryType === 'navigation') {
-          const navEntry = entry as PerformanceNavigationTiming;
-          console.log('Navigation timing:', {
-            domContentLoaded: navEntry.domContentLoadedEventEnd - navEntry.domContentLoadedEventStart,
-            loadComplete: navEntry.loadEventEnd - navEntry.loadEventStart,
-            total: navEntry.loadEventEnd - navEntry.fetchStart
-          });
+      // Monitor navigation timing
+      navigationObserver = new PerformanceObserver((list) => {
+        for (const entry of list.getEntries()) {
+          if (entry.entryType === 'navigation') {
+            const navEntry = entry as PerformanceNavigationTiming;
+            console.log('Navigation timing:', {
+              domContentLoaded: navEntry.domContentLoadedEventEnd - navEntry.domContentLoadedEventStart,
+              loadComplete: navEntry.loadEventEnd - navEntry.loadEventStart,
+              total: navEntry.loadEventEnd - navEntry.fetchStart
+            });
+          }
         }
-      }
-    });
+      });
 
-    navigationObserver.observe({ entryTypes: ['navigation'] });
+      navigationObserver.observe({ entryTypes: ['navigation'] });
+    }
 
     return () => {
-      observer.disconnect();
-      navigationObserver.disconnect();
+      if (observer) observer.disconnect();
+      if (navigationObserver) navigationObserver.disconnect();
     };
   }, []);
 

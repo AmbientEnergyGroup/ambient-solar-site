@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/lib/contexts/AuthContext";
 import { useTheme } from "@/lib/hooks/useTheme";
 import { Zap, Check, X, Clock, User, MapPin, Phone, Mail } from "lucide-react";
@@ -29,12 +29,15 @@ export default function CloserCore() {
   const [sets, setSets] = useState<CloserSet[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedOffice, setSelectedOffice] = useState<string>('all');
+  const [lastFetchTime, setLastFetchTime] = useState<number>(0);
   const { darkMode } = useTheme();
   const auth = useAuth();
   const { user, userData, loading: authLoading, signOut } = auth || {};
 
-  // Check if user is a closer
+  // Check if user is a closer or setter (setters can view but not interact)
   const isCloser = user?.role === 'closer' || userData?.role === 'closer' || user?.role === 'admin';
+  const isSetter = user?.role === 'setter' || userData?.role === 'setter';
+  const canInteract = isCloser; // Only closers can interact, setters can only view
 
     // Set up real-time subscriptions to Firestore
   useEffect(() => {
@@ -43,20 +46,28 @@ export default function CloserCore() {
       return;
     }
 
+    // Check if we need to fetch data (cache for 30 seconds)
+    const now = Date.now();
+    const shouldFetch = now - lastFetchTime > 30000; // 30 second cache
+
+    if (!shouldFetch && sets.length > 0) {
+      setLoading(false);
+      return;
+    }
+
     console.log('Setting up real-time subscriptions for closer:', user.uid);
     
-    let unsubscribeAvailable: (() => void) | null = null;
-    let unsubscribeAssigned: (() => void) | null = null;
+    let unsubscribe: (() => void) | null = null;
 
     // Set a timeout to prevent infinite loading
     const loadingTimeout = setTimeout(() => {
       console.log('Loading timeout reached, setting loading to false');
       setLoading(false);
-    }, 10000); // 10 second timeout
+    }, 5000); // Reduced to 5 second timeout
 
-    if (activeTab === 'available') {
-      try {
-        unsubscribeAvailable = subscribeToAvailableSets((availableSets) => {
+    try {
+      if (activeTab === 'available') {
+        unsubscribe = subscribeToAvailableSets((availableSets) => {
           console.log('Received available sets from Firestore:', availableSets.length);
           const closerSets: CloserSet[] = availableSets.map(set => ({
             ...set,
@@ -64,17 +75,12 @@ export default function CloserCore() {
             office: userData?.office || 'Unknown'
           }));
           setSets(closerSets);
+          setLastFetchTime(now);
           setLoading(false);
           clearTimeout(loadingTimeout);
         });
-      } catch (error) {
-        console.error('Error setting up available sets subscription:', error);
-        setLoading(false);
-        clearTimeout(loadingTimeout);
-      }
-    } else if (activeTab === 'assigned') {
-      try {
-        unsubscribeAssigned = subscribeToCloserSets(user.uid, (assignedSets) => {
+      } else if (activeTab === 'assigned') {
+        unsubscribe = subscribeToCloserSets(user.uid, (assignedSets) => {
           console.log('Received assigned sets from Firestore:', assignedSets.length);
           const closerSets: CloserSet[] = assignedSets.map(set => ({
             ...set,
@@ -82,22 +88,28 @@ export default function CloserCore() {
             office: userData?.office || 'Unknown'
           }));
           setSets(closerSets);
+          setLastFetchTime(now);
           setLoading(false);
           clearTimeout(loadingTimeout);
         });
-      } catch (error) {
-        console.error('Error setting up assigned sets subscription:', error);
+      } else if (activeTab === 'closed') {
+        // For closed sets, we can use a simpler approach or cache the data
+        setSets([]);
+        setLastFetchTime(now);
         setLoading(false);
         clearTimeout(loadingTimeout);
       }
+    } catch (error) {
+      console.error('Error setting up subscription:', error);
+      setLoading(false);
+      clearTimeout(loadingTimeout);
     }
 
     return () => {
       clearTimeout(loadingTimeout);
-      if (unsubscribeAvailable) unsubscribeAvailable();
-      if (unsubscribeAssigned) unsubscribeAssigned();
+      if (unsubscribe) unsubscribe();
     };
-  }, [user?.uid, activeTab, userData?.office]);
+  }, [user?.uid, activeTab, lastFetchTime, sets.length]); // Added cache dependencies
 
   // Reset loading when tab changes
   useEffect(() => {
@@ -114,8 +126,8 @@ export default function CloserCore() {
     return `${dayOfWeek}, ${month} ${day}, ${year}`;
   };
 
-  // Filter sets based on active tab and office
-  const getFilteredSets = () => {
+  // Filter sets based on active tab and office - memoized for performance
+  const filteredSets = useMemo(() => {
     let filtered = sets;
 
     // Filter by office
@@ -136,11 +148,10 @@ export default function CloserCore() {
       default:
         return filtered;
     }
-  };
+  }, [sets, selectedOffice, activeTab, user?.uid, user?.role]);
 
-  // Group sets by date
-  const getSetsByDate = () => {
-    const filteredSets = getFilteredSets();
+  // Group sets by date - memoized for performance
+  const { grouped, sortedDates } = useMemo(() => {
     const grouped: Record<string, CloserSet[]> = {};
     
     filteredSets.forEach(set => {
@@ -161,7 +172,23 @@ export default function CloserCore() {
     });
 
     return { grouped, sortedDates };
-  };
+  }, [filteredSets, activeTab]);
+
+  // Memoized stats calculations
+  const availableSetsCount = useMemo(() => 
+    sets.filter(set => set.status === 'active' && !set.closerId).length, 
+    [sets]
+  );
+
+  const myAssignmentsCount = useMemo(() => 
+    sets.filter(set => set.closerId === user?.uid).length, 
+    [sets, user?.uid]
+  );
+
+  const closedSetsCount = useMemo(() => 
+    sets.filter(set => set.status === 'closed' && set.closerId === user?.uid).length, 
+    [sets, user?.uid]
+  );
 
   // Handle accepting a set
   const handleAcceptSet = async (setId: string) => {
@@ -169,8 +196,11 @@ export default function CloserCore() {
     
     try {
       const closerName = user?.displayName || userData?.displayName || 'Unknown Closer';
+      // First assign the set to the closer
       await assignSetToCloser(setId, user.uid, closerName);
-      console.log('Set accepted successfully');
+      // Then update status to assigned
+      await updateSetStatus(setId, 'assigned');
+      console.log('Set accepted and assigned successfully');
     } catch (error) {
       console.error('Error accepting set:', error);
       alert('Error accepting set. Please try again.');
@@ -188,18 +218,74 @@ export default function CloserCore() {
     }
   };
 
+  // Handle marking set as not closed
+  const handleNotClosedSet = async (setId: string) => {
+    try {
+      await updateSetStatus(setId, 'not_closed');
+      console.log('Set marked as not closed');
+    } catch (error) {
+      console.error('Error marking set as not closed:', error);
+      alert('Error marking set as not closed. Please try again.');
+    }
+  };
+
   // Show loading state while checking authentication
-  if (authLoading || loading) {
+  if (authLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen theme-bg-primary">
         <div className={`animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 ${darkMode ? 'border-cyan-500' : 'border-cyan-500'} mb-4`}></div>
-        <div className="text-gray-400 text-sm">
-          {authLoading ? 'Loading authentication...' : 'Loading sets...'}
-        </div>
-        <div className="text-gray-500 text-xs mt-2">
-          User: {user?.email || 'Not authenticated'} | Role: {userData?.role || user?.role || 'Unknown'}
-        </div>
+        <div className="text-gray-400 text-sm">Loading authentication...</div>
       </div>
+    );
+  }
+
+  // Show loading state for sets
+  if (loading) {
+    return (
+      <ClientOnly>
+        <div className="flex h-screen theme-bg-primary">
+          <Sidebar 
+            darkMode={darkMode}
+            signOut={signOut}
+            sidebarOpen={sidebarOpen}
+            setSidebarOpen={setSidebarOpen}
+          />
+          <div className="flex-1 overflow-auto theme-bg-secondary">
+            <header className="standard-header">
+              <div className="standard-header-content">
+                <button 
+                  onClick={() => setSidebarOpen(!sidebarOpen)} 
+                  className="text-cyan-500 hover:text-cyan-600 transition-colors p-1"
+                >
+                  {sidebarOpen ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
+                    </svg>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                  )}
+                </button>
+                <div className="ml-2">
+                  <MessagesButton />
+                </div>
+                {!sidebarOpen && (
+                  <div className="header-logo-center">
+                    <AmbientLogo theme={darkMode ? 'dark' : 'light'} size="xl" />
+                  </div>
+                )}
+              </div>
+            </header>
+            <main className="p-6">
+              <div className="flex flex-col items-center justify-center min-h-96">
+                <div className={`animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 ${darkMode ? 'border-cyan-500' : 'border-cyan-500'} mb-4`}></div>
+                <div className="text-gray-400 text-sm">Loading sets...</div>
+              </div>
+            </main>
+          </div>
+        </div>
+      </ClientOnly>
     );
   }
 
@@ -208,8 +294,8 @@ export default function CloserCore() {
     return null;
   }
 
-  // If user is not a closer, show access denied
-  if (!isCloser) {
+  // If user is not a closer or setter, show access denied
+  if (!isCloser && !isSetter) {
     return (
       <ClientOnly>
         <div className="flex h-screen theme-bg-primary">
@@ -251,7 +337,7 @@ export default function CloserCore() {
                 <X className="h-16 w-16 text-red-500 mx-auto mb-4" />
                 <h1 className="text-2xl font-bold theme-text-primary mb-2">Access Denied</h1>
                 <p className="text-lg theme-text-secondary">
-                  Only closers can access this page. Your current role is: <strong>{user?.role || userData?.role}</strong>
+                  Only closers and setters can access this page. Your current role is: <strong>{user?.role || userData?.role}</strong>
                 </p>
               </div>
             </main>
@@ -327,7 +413,7 @@ export default function CloserCore() {
                   <div>
                     <p className="text-sm font-medium theme-text-secondary">Available Sets</p>
                     <p className="text-2xl font-bold theme-text-primary">
-                      {sets.filter(set => set.status === 'active' && !set.closerId).length}
+                      {availableSetsCount}
                     </p>
                   </div>
                 </div>
@@ -338,7 +424,7 @@ export default function CloserCore() {
                   <div>
                     <p className="text-sm font-medium theme-text-secondary">My Assignments</p>
                     <p className="text-2xl font-bold theme-text-primary">
-                      {sets.filter(set => set.closerId === user?.uid).length}
+                      {myAssignmentsCount}
                     </p>
                   </div>
                 </div>
@@ -349,12 +435,33 @@ export default function CloserCore() {
                   <div>
                     <p className="text-sm font-medium theme-text-secondary">Closed This Week</p>
                     <p className="text-2xl font-bold theme-text-primary">
-                      {sets.filter(set => set.status === 'closed' && set.closerId === user?.uid).length}
+                      {closedSetsCount}
                     </p>
                   </div>
                 </div>
               </div>
             </div>
+
+            {/* Setter View-Only Notice */}
+            {isSetter && !isCloser && (
+              <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                      View-Only Mode
+                    </h3>
+                    <div className="mt-2 text-sm text-blue-700 dark:text-blue-300">
+                      <p>As a setter, you can view sets and their status updates, but cannot interact with them. Only closers can accept and manage sets.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Office Sets Overview */}
             <div className="mb-8">
@@ -390,7 +497,7 @@ export default function CloserCore() {
                         : 'border-transparent theme-text-secondary hover:theme-text-primary hover:border-gray-300'
                     }`}
                   >
-                    Available Sets ({sets.filter(set => set.status === 'active' && !set.closerId).length})
+                    Available Sets ({availableSetsCount})
                   </button>
                   <button
                     onClick={() => setActiveTab('assigned')}
@@ -400,7 +507,7 @@ export default function CloserCore() {
                         : 'border-transparent theme-text-secondary hover:theme-text-primary hover:border-gray-300'
                     }`}
                   >
-                    My Assignments ({sets.filter(set => set.closerId === user?.uid).length})
+                    My Assignments ({myAssignmentsCount})
                   </button>
                   <button
                     onClick={() => setActiveTab('closed')}
@@ -410,7 +517,7 @@ export default function CloserCore() {
                         : 'border-transparent theme-text-secondary hover:theme-text-primary hover:border-gray-300'
                     }`}
                   >
-                    Closed Sets ({sets.filter(set => set.status === 'closed' && set.closerId === user?.uid).length})
+                    Closed Sets ({closedSetsCount})
                   </button>
                 </nav>
               </div>
@@ -457,8 +564,6 @@ export default function CloserCore() {
                     </thead>
                     <tbody className="divide-y theme-border-secondary">
                       {(() => {
-                        const { grouped, sortedDates } = getSetsByDate();
-                        
                         if (sortedDates.length === 0) {
                           return (
                             <tr>
@@ -563,8 +668,13 @@ export default function CloserCore() {
                                     <div className="flex space-x-2 justify-end">
                                       {activeTab === 'available' && (
                                         <button 
-                                          onClick={() => handleAcceptSet(set.id)}
-                                          className="px-3 py-1 rounded text-xs bg-green-500 hover:bg-green-600 text-white flex items-center"
+                                          onClick={() => canInteract && handleAcceptSet(set.id)}
+                                          disabled={!canInteract}
+                                          className={`px-3 py-1 rounded text-xs flex items-center ${
+                                            canInteract 
+                                              ? 'bg-green-500 hover:bg-green-600 text-white' 
+                                              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                          }`}
                                         >
                                           <Check className="h-3 w-3 mr-1" />
                                           Accept
@@ -572,21 +682,63 @@ export default function CloserCore() {
                                       )}
                                       {activeTab === 'assigned' && (
                                         <>
-                                          <button className="px-2.5 py-1 rounded text-xs bg-gray-200 text-gray-700 hover:bg-gray-300">
+                                          <button 
+                                            disabled={!canInteract}
+                                            className={`px-2.5 py-1 rounded text-xs ${
+                                              canInteract 
+                                                ? 'bg-gray-200 text-gray-700 hover:bg-gray-300' 
+                                                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                            }`}
+                                          >
                                             Documents
                                           </button>
                                           <button 
-                                            onClick={() => handleCloseSet(set.id)}
-                                            className="px-2.5 py-1 rounded text-xs bg-purple-500 hover:bg-purple-600 text-white"
+                                            onClick={() => canInteract && handleCloseSet(set.id)}
+                                            disabled={!canInteract}
+                                            className={`px-2.5 py-1 rounded text-xs ${
+                                              canInteract 
+                                                ? 'bg-green-500 hover:bg-green-600 text-white' 
+                                                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                            }`}
                                           >
                                             Mark Closed
+                                          </button>
+                                          <button 
+                                            onClick={() => canInteract && handleNotClosedSet(set.id)}
+                                            disabled={!canInteract}
+                                            className={`px-2.5 py-1 rounded text-xs ${
+                                              canInteract 
+                                                ? 'bg-yellow-500 hover:bg-yellow-600 text-white' 
+                                                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                            }`}
+                                          >
+                                            Mark Not Closed
                                           </button>
                                         </>
                                       )}
                                       {activeTab === 'closed' && (
-                                        <button className="px-2.5 py-1 rounded text-xs bg-gray-200 text-gray-700 hover:bg-gray-300">
-                                          View Details
-                                        </button>
+                                        <>
+                                          <button 
+                                            disabled={!canInteract}
+                                            className={`px-2.5 py-1 rounded text-xs ${
+                                              canInteract 
+                                                ? 'bg-gray-200 text-gray-700 hover:bg-gray-300' 
+                                                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                            }`}
+                                          >
+                                            View Details
+                                          </button>
+                                          <button 
+                                            disabled={!canInteract}
+                                            className={`px-2.5 py-1 rounded text-xs ${
+                                              canInteract 
+                                                ? 'bg-blue-500 hover:bg-blue-600 text-white' 
+                                                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                            }`}
+                                          >
+                                            Move to Projects
+                                          </button>
+                                        </>
                                       )}
                                     </div>
                                   </td>

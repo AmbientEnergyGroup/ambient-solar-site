@@ -11,6 +11,15 @@ import { useTheme } from "@/lib/hooks/useTheme";
 import ClientOnly from "@/components/ClientOnly";
 import MessagesButton from "@/components/MessagesButton";
 import OfficeLogos from "@/components/OfficeLogos";
+import { 
+  calculateTeamEarnings, 
+  calculateTeamRevenue, 
+  calculateTeamEarningsByOffice,
+  calculateTeamRevenueByOffice,
+  calculateManagerCommission,
+  getUserPayType,
+  Project 
+} from "@/lib/utils/commissionCalculations";
 
 export default function Team() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -124,45 +133,38 @@ export default function Team() {
     setTeamGoalKW(totalKW);
   }, [isClient]);
 
-  // Calculate YTD team earnings and revenue
+  // Calculate YTD manager commission and team revenue using shared calculation logic
   useEffect(() => {
-    let totalEarnings = 0;
-    let totalRevenue = 0;
     const projectsRaw = localStorage.getItem('projects');
     if (projectsRaw) {
       try {
-        const projects = JSON.parse(projectsRaw);
+        const projects: Project[] = JSON.parse(projectsRaw);
         const currentYear = new Date().getFullYear();
         
-        for (const project of projects) {
-          // Check if project is from current year
-          if (project.installDate && new Date(project.installDate).getFullYear() === currentYear) {
-            // Add to revenue
-            if (project.paymentAmount) {
-              totalRevenue += project.paymentAmount;
-            }
-            
-            // Calculate earnings based on commission rate
-            if (project.commissionRate && project.systemSize) {
-              const systemSizeKW = parseFloat(project.systemSize);
-              const commission = systemSizeKW * project.commissionRate;
-              totalEarnings += commission;
-            }
-          }
-        }
-      } catch {}
+        // Calculate manager commission ($175/kW on all team deals) and total team revenue (includes all team members + manager)
+        const managerCommission = calculateManagerCommission(projects, currentYear);
+        const totalRevenue = calculateTeamRevenue(projects, currentYear);
+        
+        setYtdTeamEarnings(managerCommission);
+        setYtdRevenue(totalRevenue);
+      } catch (error) {
+        console.error('Error calculating team stats:', error);
+        setYtdTeamEarnings(0);
+        setYtdRevenue(0);
+      }
+    } else {
+      setYtdTeamEarnings(0);
+      setYtdRevenue(0);
     }
-    setYtdTeamEarnings(totalEarnings);
-    setYtdRevenue(totalRevenue);
   }, [isClient]);
 
-  // Calculate YTD kW sold for each rep
+  // Calculate YTD kW sold for each rep using shared calculation logic
   useEffect(() => {
     const performance: {[key: string]: number} = {};
     const projectsRaw = localStorage.getItem('projects');
     if (projectsRaw) {
       try {
-        const projects = JSON.parse(projectsRaw);
+        const projects: Project[] = JSON.parse(projectsRaw);
         const currentYear = new Date().getFullYear();
         
         // Sample rep data - in a real app, this would come from your user database
@@ -178,8 +180,10 @@ export default function Team() {
         });
         
         for (const project of projects) {
-          // Check if project is from current year
-          if (project.installDate && new Date(project.installDate).getFullYear() === currentYear) {
+          // Check if project is from current year and not cancelled
+          if (project.installDate && 
+              new Date(project.installDate).getFullYear() === currentYear &&
+              project.status !== 'cancelled') {
             if (project.systemSize && project.customerName) {
               const systemSizeKW = parseFloat(project.systemSize);
               
@@ -191,7 +195,9 @@ export default function Team() {
             }
           }
         }
-      } catch {}
+      } catch (error) {
+        console.error('Error calculating rep performance:', error);
+      }
     }
     setRepPerformance(performance);
   }, [isClient]);
@@ -210,12 +216,20 @@ export default function Team() {
     e.preventDefault();
     
     try {
-      // Here you would typically send the data to your backend API
-      // For now, we'll simulate the email sending
-      console.log('Sending invitation to:', newRepData);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Send invitation email via API
+      const response = await fetch('/api/send-invite', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newRepData),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to send invitation');
+      }
       
       // Reset form and close dropdown
       setNewRepData({
@@ -227,12 +241,12 @@ export default function Team() {
       });
       setShowAddRepForm(false);
       
-      // Show success message (you could add a toast notification here)
+      // Show success message
       alert(`Invitation sent to ${newRepData.name} at ${newRepData.email}. They will be recruited by ${newRepData.recruitedBy}`);
       
     } catch (error) {
       console.error('Error sending invitation:', error);
-      alert('Failed to send invitation. Please try again.');
+      alert(`Failed to send invitation: ${error instanceof Error ? error.message : 'Please try again.'}`);
     }
   };
 
@@ -639,12 +653,13 @@ export default function Team() {
                 </div>
               </div>
               
-              {/* YTD Team Earnings Card */}
+              {/* YTD Manager Commission Card */}
               <div className="theme-bg-tertiary p-6 rounded-lg shadow-sm border theme-border-primary">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm theme-text-secondary">YTD Team Earnings</p>
+                    <p className="text-sm theme-text-secondary">YTD Manager Commission</p>
                     <p className="text-2xl font-bold theme-text-primary">${ytdTeamEarnings.toLocaleString()}</p>
+                    <p className="text-xs theme-text-secondary mt-1">$175/kW on team deals</p>
                   </div>
                   <div className={`p-3 rounded-full ${darkMode ? 'bg-green-500 bg-opacity-20' : 'bg-green-500 bg-opacity-20'}`}>
                     <svg xmlns="http://www.w3.org/2000/svg" className={`h-6 w-6 ${darkMode ? 'text-green-500' : 'text-green-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -658,8 +673,9 @@ export default function Team() {
               <div className="theme-bg-tertiary p-6 rounded-lg shadow-sm border theme-border-primary">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm theme-text-secondary">YTD Revenue</p>
+                    <p className="text-sm theme-text-secondary">YTD Team Revenue</p>
                     <p className="text-2xl font-bold theme-text-primary">${ytdRevenue.toLocaleString()}</p>
+                    <p className="text-xs theme-text-secondary mt-1">All team members + manager</p>
                   </div>
                   <div className={`p-3 rounded-full ${darkMode ? 'bg-purple-500 bg-opacity-20' : 'bg-purple-500 bg-opacity-20'}`}>
                     <svg xmlns="http://www.w3.org/2000/svg" className={`h-6 w-6 ${darkMode ? 'text-purple-500' : 'text-purple-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">

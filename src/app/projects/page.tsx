@@ -29,6 +29,12 @@ import {
 import Sidebar from "@/components/Sidebar";
 import { useTheme } from "@/lib/hooks/useTheme";
 import AmbientLogo from "@/components/AmbientLogo";
+import { 
+  calculateTeamEarnings, 
+  calculateTeamRevenue, 
+  calculateProjectCommission,
+  Project as SharedProject 
+} from "@/lib/utils/commissionCalculations";
 
 // Interface for project data
 interface Project {
@@ -500,22 +506,21 @@ export default function Projects() {
     console.log("===== END TEST =====");
   };
 
-  // Calculate milestone pay based on pay type and commission percentages
+  // Calculate milestone pay based on pay type and commission percentages using shared logic
   const calculateMilestonePay = () => {
     // Get user-specific projects
     const projectsData = getUserProjects();
+    const currentYear = new Date().getFullYear();
     
-    // Calculate total milestone pay across all projects
-    let totalMilestonePay = 0;
+    // Filter projects for current year and not cancelled
+    const currentYearProjects = projectsData.filter(project => 
+      project.installDate && 
+      new Date(project.installDate).getFullYear() === currentYear &&
+      project.status !== 'cancelled'
+    );
     
-    projectsData.forEach(project => {
-      const milestoneCommission = calculateProjectMilestoneCommission(project);
-      
-      if (milestoneCommission > 0) {
-        // Add to total milestone pay
-        totalMilestonePay += milestoneCommission;
-      }
-    });
+    // Calculate total milestone pay using shared calculation logic
+    const totalMilestonePay = calculateTeamEarnings(currentYearProjects, currentYear, selectedPayType as 'Rookie' | 'Vet' | 'Pro');
     
     return totalMilestonePay;
   };
@@ -1329,14 +1334,6 @@ export default function Projects() {
                   <>
                     <h1 className="text-2xl font-semibold theme-text-primary">My Projects</h1>
                     <p className="theme-text-secondary">Track your projects and commissions</p>
-                    <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                      <p className="text-sm text-blue-800 dark:text-blue-200">
-                        <strong>Project Timeline:</strong> Other dates (permit, install, inspection, PTO, and payment) can be added later after the site survey is completed.
-                      </p>
-                      <p className="text-sm text-blue-800 dark:text-blue-200 mt-1">
-                        <strong>Note:</strong> For accounts 1-20, payment dates will be automatically set to the Friday of the next week's payroll.
-                      </p>
-                    </div>
                   </>
                 )}
               </div>

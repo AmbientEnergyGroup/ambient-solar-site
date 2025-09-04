@@ -1325,19 +1325,19 @@ The set has been moved to Projects for commission tracking. You can now track mi
                     className={`py-2 px-4 text-lg font-medium ${activeTab === "active" ? (darkMode ? "text-cyan-500 border-b-2 border-cyan-500" : "text-cyan-500 border-b-2 border-cyan-500") : "theme-text-secondary hover:theme-text-primary"}`}
                     onClick={() => setActiveTab("active")}
                   >
-                    My Active Appointments
+                    Active Sets
                   </button>
                   <button 
                     className={`py-2 px-4 text-lg font-medium ${activeTab === "not_closed" ? (darkMode ? "text-cyan-500 border-b-2 border-cyan-500" : "text-cyan-500 border-b-2 border-cyan-500") : "theme-text-secondary hover:theme-text-primary"}`}
                     onClick={() => setActiveTab("not_closed")}
                   >
-                    Follow-up Needed
+                    Cancelled Sets
                   </button>
                   <button 
                     className={`py-2 px-4 text-lg font-medium ${activeTab === "closed" ? "text-cyan-500 border-b-2 border-cyan-500" : "theme-text-secondary hover:theme-text-primary"}`}
                     onClick={() => setActiveTab("closed")}
                   >
-                    Completed
+                    Closed Sets
                   </button>
                 </div>
               </div>

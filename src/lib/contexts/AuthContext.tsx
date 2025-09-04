@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useEffect, useState, useCallback } from "react";
+import React, { createContext, useEffect, useState, useCallback, useMemo } from "react";
 import { 
   signInWithPopup, 
   GoogleAuthProvider, 
@@ -85,15 +85,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Check if we're in development mode
-  const isDevelopment = process.env.NODE_ENV === 'development' || 
-                       (typeof window !== 'undefined' && window.location.hostname === 'localhost');
+  // Check if we're in development mode (memoized to avoid recalculation)
+  const isDevelopment = useMemo(() => {
+    return process.env.NODE_ENV === 'development' || 
+           (typeof window !== 'undefined' && window.location.hostname === 'localhost');
+  }, []);
 
-  console.log('🔍 Development mode check:', {
-    NODE_ENV: process.env.NODE_ENV,
-    hostname: typeof window !== 'undefined' ? window.location.hostname : 'server',
-    isDevelopment
-  });
+  // Only log development mode check once per session
+  useEffect(() => {
+    if (isDevelopment && typeof window !== 'undefined') {
+      console.log('🔍 Development mode check:', {
+        NODE_ENV: process.env.NODE_ENV,
+        hostname: window.location.hostname,
+        isDevelopment
+      });
+    }
+  }, [isDevelopment]);
 
   // Optimized auth state change handler
   const handleAuthStateChange = useCallback(async (firebaseUser: any) => {
@@ -210,15 +217,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   useEffect(() => {
-    // In development mode, bypass Firebase auth and create a fake user
-    if (isDevelopment) {
-      console.log('🚀 Development mode detected - bypassing Firebase auth');
-      console.log('🔍 Creating fake user...');
+    // Check if Firebase is properly configured
+    const hasRealFirebaseConfig = process.env.NEXT_PUBLIC_FIREBASE_API_KEY && 
+                                 process.env.NEXT_PUBLIC_FIREBASE_API_KEY !== "demo-api-key" &&
+                                 process.env.NEXT_PUBLIC_FIREBASE_API_KEY !== "your_firebase_api_key_here";
+
+    // In development mode or if Firebase is not configured, bypass Firebase auth
+    if (isDevelopment || !hasRealFirebaseConfig) {
+      console.log('🚀 Development mode or Firebase not configured - bypassing Firebase auth');
+      console.log('🔍 Creating fallback user...');
       
-      const fakeUser: ExtendedUser = {
-        uid: 'dev_user_123',
-        email: 'dev@ambient.local',
-        displayName: 'Development User',
+      const fallbackUser: ExtendedUser = {
+        uid: 'fallback_user_123',
+        email: 'support@ambientenergygroup.com',
+        displayName: 'Ambient Energy Group',
         role: 'admin',
         emailVerified: true,
         isAnonymous: false,
@@ -236,11 +248,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         providerId: 'password',
       };
       
-      const fakeUserData: UserData = {
-        id: 'dev_user_123',
+      const fallbackUserData: UserData = {
+        id: 'fallback_user_123',
         role: 'admin',
-        displayName: 'Development User',
-        email: 'dev@ambient.local',
+        displayName: 'Ambient Energy Group',
+        email: 'support@ambientenergygroup.com',
         phoneNumber: '+1234567890',
         team: 'Team A',
         region: 'Region A',
@@ -258,32 +270,93 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       };
       
-      setUser(fakeUser);
-      setUserData(fakeUserData);
+      setUser(fallbackUser);
+      setUserData(fallbackUserData);
       setLoading(false);
-      console.log('✅ Development user created successfully');
+      console.log('✅ Fallback user created successfully');
       return;
     }
 
-    // Production mode - use Firebase auth
+    // Production mode with proper Firebase config - use Firebase auth
     console.log('🔄 Setting up auth state listener...');
-    const auth = getFirebaseAuth();
-    const unsubscribe = auth.onAuthStateChanged(handleAuthStateChange);
-    
-    // Add a timeout to prevent infinite loading
-    const timeoutId = setTimeout(() => {
-      console.log('⚠️ Auth timeout - forcing loading to false');
+    try {
+      const auth = getFirebaseAuth();
+      const unsubscribe = auth.onAuthStateChanged(handleAuthStateChange);
+      
+      // Add a timeout to prevent infinite loading
+      const timeoutId = setTimeout(() => {
+        console.log('⚠️ Auth timeout - forcing loading to false');
+        setLoading(false);
+      }, 15000); // 15 seconds timeout
+      
+      return () => {
+        console.log('🔄 Cleaning up auth listener...');
+        clearTimeout(timeoutId);
+        unsubscribe();
+      };
+    } catch (error) {
+      console.error('❌ Error setting up Firebase auth:', error);
+      // Fallback to demo user if Firebase fails
+      const fallbackUser: ExtendedUser = {
+        uid: 'fallback_user_123',
+        email: 'support@ambientenergygroup.com',
+        displayName: 'Ambient Energy Group',
+        role: 'admin',
+        emailVerified: true,
+        isAnonymous: false,
+        metadata: {} as any,
+        providerData: [],
+        refreshToken: '',
+        tenantId: null,
+        delete: async () => {},
+        getIdToken: async () => '',
+        getIdTokenResult: async () => ({} as any),
+        reload: async () => {},
+        toJSON: () => ({}),
+        phoneNumber: null,
+        photoURL: null,
+        providerId: 'password',
+      };
+      
+      const fallbackUserData: UserData = {
+        id: 'fallback_user_123',
+        role: 'admin',
+        displayName: 'Ambient Energy Group',
+        email: 'support@ambientenergygroup.com',
+        phoneNumber: '+1234567890',
+        team: 'Team A',
+        region: 'Region A',
+        payType: 'Pro',
+        createdAt: new Date().toISOString(),
+        active: true,
+        dealCount: 0,
+        totalCommission: 0,
+        recentProjects: [],
+        commissionPayments: [],
+        settings: {
+          notifications: true,
+          theme: 'auto',
+          language: 'en'
+        }
+      };
+      
+      setUser(fallbackUser);
+      setUserData(fallbackUserData);
       setLoading(false);
-    }, 15000); // 15 seconds timeout
-    
-    return () => {
-      console.log('🔄 Cleaning up auth listener...');
-      clearTimeout(timeoutId);
-      unsubscribe();
-    };
+    }
   }, [handleAuthStateChange, isDevelopment]);
 
   const signInWithGoogle = async () => {
+    // Check if Firebase is properly configured
+    const hasRealFirebaseConfig = process.env.NEXT_PUBLIC_FIREBASE_API_KEY && 
+                                 process.env.NEXT_PUBLIC_FIREBASE_API_KEY !== "demo-api-key" &&
+                                 process.env.NEXT_PUBLIC_FIREBASE_API_KEY !== "your_firebase_api_key_here";
+
+    if (!hasRealFirebaseConfig) {
+      console.log('⚠️ Firebase not configured - Google sign-in not available');
+      throw new Error('Authentication not available. Please contact your administrator.');
+    }
+
     try {
       const auth = getFirebaseAuth();
       const provider = new GoogleAuthProvider();
@@ -345,6 +418,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const sendSignInLink = async (email: string) => {
+    // Check if Firebase is properly configured
+    const hasRealFirebaseConfig = process.env.NEXT_PUBLIC_FIREBASE_API_KEY && 
+                                 process.env.NEXT_PUBLIC_FIREBASE_API_KEY !== "demo-api-key" &&
+                                 process.env.NEXT_PUBLIC_FIREBASE_API_KEY !== "your_firebase_api_key_here";
+
+    if (!hasRealFirebaseConfig) {
+      console.log('⚠️ Firebase not configured - email sign-in not available');
+      throw new Error('Authentication not available. Please contact your administrator.');
+    }
+
     try {
       const auth = getFirebaseAuth();
       const actionCodeSettings = {

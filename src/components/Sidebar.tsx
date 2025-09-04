@@ -119,16 +119,9 @@ export default function Sidebar({ signOut, darkMode, sidebarOpen, setSidebarOpen
           <a href="/closer-core" className={`flex items-center px-4 py-3 ${
             pathname === '/closer-core' 
               ? 'theme-text-primary theme-bg-active' 
-              : (user?.role === 'setter' 
-                  ? 'text-gray-400 hover:text-gray-500 transition-colors duration-200 cursor-not-allowed'
-                  : 'theme-text-secondary hover:theme-text-primary hover:bg-opacity-10 hover:bg-gray-500 transition-colors duration-200'
-                )
-          }`} style={{
-            pointerEvents: user?.role === 'setter' ? 'none' : 'auto'
-          }}>
-            <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 mr-3 ${
-              user?.role === 'setter' ? 'text-gray-400' : ''
-            }`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              : 'theme-text-secondary hover:theme-text-primary hover:bg-opacity-10 hover:bg-gray-500 transition-colors duration-200'
+          }`}>
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
             Closer Core
